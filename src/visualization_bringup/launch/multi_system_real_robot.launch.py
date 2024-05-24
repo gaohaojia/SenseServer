@@ -26,7 +26,7 @@ def generate_launch_description():
     ld = LaunchDescription()
 
     # Add the actions
-    for idx in range(5):
+    for idx in range(1):
         start_robot_rviz = Node(
             package='rviz2',
             executable='rviz2',
@@ -34,7 +34,7 @@ def generate_launch_description():
             output='screen'
         )
         ld.add_action(start_robot_rviz)
-        
+
     ld.add_action(start_gicp_rviz)
     ld.add_action(start_small_gicp)
 
