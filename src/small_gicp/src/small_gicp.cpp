@@ -14,10 +14,10 @@ namespace small_gicp
 {
 SmallGicpNode::SmallGicpNode(const rclcpp::NodeOptions & options) : Node("small_gicp", options) {
   robot_0_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("/robot_0/registered_scan", 5, std::bind(&SmallGicpNode::RegisteredScanCallBack, this, std::placeholders::_1));
-  robot_0_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("/robot_1/registered_scan", 5, std::bind(&SmallGicpNode::RegisteredScanCallBack, this, std::placeholders::_1));
-  robot_0_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("/robot_2/registered_scan", 5, std::bind(&SmallGicpNode::RegisteredScanCallBack, this, std::placeholders::_1));
-  robot_0_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("/robot_3/registered_scan", 5, std::bind(&SmallGicpNode::RegisteredScanCallBack, this, std::placeholders::_1));
-  robot_0_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("/robot_4/registered_scan", 5, std::bind(&SmallGicpNode::RegisteredScanCallBack, this, std::placeholders::_1));
+  robot_1_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("/robot_1/registered_scan", 5, std::bind(&SmallGicpNode::RegisteredScanCallBack, this, std::placeholders::_1));
+  robot_2_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("/robot_2/registered_scan", 5, std::bind(&SmallGicpNode::RegisteredScanCallBack, this, std::placeholders::_1));
+  robot_3_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("/robot_3/registered_scan", 5, std::bind(&SmallGicpNode::RegisteredScanCallBack, this, std::placeholders::_1));
+  robot_4_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("/robot_4/registered_scan", 5, std::bind(&SmallGicpNode::RegisteredScanCallBack, this, std::placeholders::_1));
 
   aligned_scan_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/aligned_scan", 5);
 }
