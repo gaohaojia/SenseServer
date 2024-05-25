@@ -46,7 +46,7 @@ Visualization Manager:
       Name: AlignedScan
       Position Transformer: XYZ
       Selectable: true
-      Size (Pixels): 2
+      Size (Pixels): 3
       Size (m): 0.05000000074505806
       Style: Points
       Topic:

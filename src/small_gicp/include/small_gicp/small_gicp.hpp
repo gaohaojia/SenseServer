@@ -19,14 +19,24 @@ class SmallGicpNode : public rclcpp::Node
 {
 public:
   SmallGicpNode(const rclcpp::NodeOptions & options);
+  ~SmallGicpNode() override;
 
 private:
+  int robot_count;
   bool init_state = false;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr robot_point_cloud[5];
 
-  pcl::PointCloud<pcl::PointXYZI>::Ptr aligned_point_cloud;
+  std::thread align_thread_;
+  std::shared_ptr<pcl::PointCloud<pcl::PointXYZI>> aligned_result;
+  std::shared_ptr<pcl::PointCloud<pcl::PointXYZI>> aligned_tmp;
+  std::shared_ptr<sensor_msgs::msg::PointCloud2> aligned_msg;
 
-  void
-  RegisteredScanCallBack(const sensor_msgs::msg::PointCloud2::ConstSharedPtr registered_scan_msg);
+  void Robot0CallBack(const sensor_msgs::msg::PointCloud2::ConstSharedPtr registered_scan_msg);
+  void Robot1CallBack(const sensor_msgs::msg::PointCloud2::ConstSharedPtr registered_scan_msg);
+  void Robot2CallBack(const sensor_msgs::msg::PointCloud2::ConstSharedPtr registered_scan_msg);
+  void Robot3CallBack(const sensor_msgs::msg::PointCloud2::ConstSharedPtr registered_scan_msg);
+  void Robot4CallBack(const sensor_msgs::msg::PointCloud2::ConstSharedPtr registered_scan_msg);
+  void AlignPointCloud();
 
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr robot_0_sub_;
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr robot_1_sub_;
