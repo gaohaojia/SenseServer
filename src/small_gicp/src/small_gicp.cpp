@@ -108,7 +108,6 @@ void SmallGicpNode::AlignPointCloud()
       continue;
     }
     aligned_result = std::make_shared<pcl::PointCloud<pcl::PointXYZI>>(*robot_point_cloud[0]);
-    RCLCPP_INFO(this->get_logger(), "0");
     for (int i = 1; i < robot_count; i++) {
       reg->setInputTarget(aligned_result);
       reg->setInputSource(robot_point_cloud[i]);
@@ -116,7 +115,6 @@ void SmallGicpNode::AlignPointCloud()
       reg->align(*aligned_tmp);
       aligned_result = std::make_shared<pcl::PointCloud<pcl::PointXYZI>>(*aligned_tmp);
     }
-    RCLCPP_INFO(this->get_logger(), "1");
     aligned_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
     pcl::toROSMsg(*aligned_result, *aligned_msg);
     aligned_msg->header.stamp = this->now();
