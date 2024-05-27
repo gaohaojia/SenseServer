@@ -96,7 +96,7 @@ void SmallGicpNode::Robot4CallBack(
 void SmallGicpNode::AlignPointCloud()
 {
   std::shared_ptr<REG_TYPE> reg(new REG_TYPE());
-  reg->setNumThreads(8);
+  reg->setNumThreads(64);
   reg->setCorrespondenceRandomness(20);
   reg->setMaxCorrespondenceDistance(1.0);
   reg->setVoxelResolution(1.0);
