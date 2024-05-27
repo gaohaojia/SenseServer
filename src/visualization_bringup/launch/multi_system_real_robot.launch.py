@@ -3,7 +3,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription, LaunchContext
 from launch_ros.actions import Node
-from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, OpaqueFunction
+from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, OpaqueFunction, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 
@@ -56,7 +56,7 @@ def generate_launch_description():
     # Add the actions
     ld.add_action(declare_robot_count)
     
-    ld.add_action(OpaqueFunction(function=launch_robot_rviz, args=[robot_count]))
+    ld.add_action(TimerAction(period=10.0, actions=[OpaqueFunction(function=launch_robot_rviz, args=[robot_count])]))
 
     ld.add_action(start_gicp_rviz)
     ld.add_action(start_small_gicp)
