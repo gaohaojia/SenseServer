@@ -43,12 +43,12 @@ void ExploredAreaNode::RegisteredScanCallBack(
 
   *exploredVolumeCloud += *laserCloud;
 
-  // exploredVolumeCloud2->clear();
-  // exploredVolumeDwzFilter.setInputCloud(exploredVolumeCloud);
-  // exploredVolumeDwzFilter.filter(*exploredVolumeCloud2);
+  exploredVolumeCloud2->clear();
+  exploredVolumeDwzFilter.setInputCloud(exploredVolumeCloud);
+  exploredVolumeDwzFilter.filter(*exploredVolumeCloud2);
 
   pcl::PointCloud<pcl::PointXYZI>::Ptr tempCloud = exploredVolumeCloud;
-  // exploredVolumeCloud = exploredVolumeCloud2;
+  exploredVolumeCloud = exploredVolumeCloud2;
   exploredVolumeCloud2 = tempCloud;
 
   exploredVolume = exploredVolumeVoxelSize * exploredVolumeVoxelSize * exploredVolumeVoxelSize *
@@ -58,12 +58,12 @@ void ExploredAreaNode::RegisteredScanCallBack(
 
   exploredAreaDisplayCount++;
   if (exploredAreaDisplayCount >= 5 * exploredAreaDisplayInterval) {
-    // exploredAreaCloud2->clear();
-    // exploredAreaDwzFilter.setInputCloud(exploredAreaCloud);
-    // exploredAreaDwzFilter.filter(*exploredAreaCloud2);
+    exploredAreaCloud2->clear();
+    exploredAreaDwzFilter.setInputCloud(exploredAreaCloud);
+    exploredAreaDwzFilter.filter(*exploredAreaCloud2);
 
     tempCloud = exploredAreaCloud;
-    // exploredAreaCloud = exploredAreaCloud2;
+    exploredAreaCloud = exploredAreaCloud2;
     exploredAreaCloud2 = tempCloud;
 
     sensor_msgs::msg::PointCloud2 exploredArea2;

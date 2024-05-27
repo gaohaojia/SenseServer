@@ -103,7 +103,7 @@ void SmallGicpNode::AlignPointCloud()
   reg->setRegistrationType("VGICP");
 
   while (rclcpp::ok()) {
-    rclcpp::sleep_for(std::chrono::seconds(1));
+    // rclcpp::sleep_for(std::chrono::seconds(1));
     if (!init_state) {
       continue;
     }

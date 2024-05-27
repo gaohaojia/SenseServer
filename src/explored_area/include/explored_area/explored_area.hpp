@@ -26,8 +26,8 @@ private:
   int robot_id;
   int exploredAreaDisplayCount = 0;
   int exploredAreaDisplayInterval = 1;
-  double exploredVolumeVoxelSize = 0.5;
-  double exploredAreaVoxelSize = 0.3;
+  double exploredVolumeVoxelSize = 0.1;
+  double exploredAreaVoxelSize = 0.1;
   float exploredVolume = 0;
   float travelingDis = 0;
 
