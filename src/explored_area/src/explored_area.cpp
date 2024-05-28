@@ -15,7 +15,7 @@ ExploredAreaNode::ExploredAreaNode(const rclcpp::NodeOptions & options)
   qos.keep_last(5).best_effort();
 
   registered_scan_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-    "registered_scan",
+    "total_registered_scan",
     qos,
     std::bind(&ExploredAreaNode::RegisteredScanCallBack, this, std::placeholders::_1));
 
