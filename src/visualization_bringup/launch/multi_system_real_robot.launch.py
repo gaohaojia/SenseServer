@@ -17,7 +17,7 @@ def launch_robot_rviz(context: LaunchContext, robot_count):
             arguments=['-d', os.path.join(get_package_share_directory('visualization_bringup'), 'rviz', 'robot_' + str(idx) + '_visualization.rviz')],
             output='screen'
         )
-        start_list.append(start_robot_rviz)
+        #start_list.append(start_robot_rviz)
         start_explored_area = IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(
                 get_package_share_directory('explored_area'), 'launch', 'explored_area.launch.py')
@@ -33,7 +33,7 @@ def generate_launch_description():
     robot_count = LaunchConfiguration('robot_count')
     declare_robot_count = DeclareLaunchArgument('robot_count', default_value='2', description='')
 
-    rviz_config_file = os.path.join(get_package_share_directory('visualization_bringup'), 'rviz', 'gicp_visualization.rviz')
+    rviz_config_file = os.path.join(get_package_share_directory('visualization_bringup'), 'rviz', 'multi_visualization.rviz')
 
     start_gicp_rviz = Node(
         package='rviz2',
@@ -42,23 +42,23 @@ def generate_launch_description():
         output='screen'
     )
 
-    start_small_gicp = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(
-            get_package_share_directory('small_gicp'), 'launch', 'small_gicp.launch.py')
-        ),
-        launch_arguments={
-            'robot_count': robot_count
-        }.items()
-    )
+    # start_small_gicp = IncludeLaunchDescription(
+    #     PythonLaunchDescriptionSource(os.path.join(
+    #         get_package_share_directory('small_gicp'), 'launch', 'small_gicp.launch.py')
+    #     ),
+    #     launch_arguments={
+    #         'robot_count': robot_count
+    #     }.items()
+    # )
 
     ld = LaunchDescription()
 
     # Add the actions
     ld.add_action(declare_robot_count)
     
-    ld.add_action(TimerAction(period=10.0, actions=[OpaqueFunction(function=launch_robot_rviz, args=[robot_count])]))
+    ld.add_action(TimerAction(period=5.0, actions=[OpaqueFunction(function=launch_robot_rviz, args=[robot_count])]))
 
     ld.add_action(start_gicp_rviz)
-    ld.add_action(start_small_gicp)
+    #ld.add_action(start_small_gicp)
 
     return ld

@@ -11,9 +11,12 @@ ExploredAreaNode::ExploredAreaNode(const rclcpp::NodeOptions & options)
   this->declare_parameter<int>("robot_id", 0);
   this->get_parameter("robot_id", robot_id);
 
+  rclcpp::QoS qos(5);
+  qos.keep_last(5).best_effort();
+
   registered_scan_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
     "registered_scan",
-    5,
+    qos,
     std::bind(&ExploredAreaNode::RegisteredScanCallBack, this, std::placeholders::_1));
 
   explored_area_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("explored_areas", 5);
