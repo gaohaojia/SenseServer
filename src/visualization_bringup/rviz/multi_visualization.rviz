@@ -158,7 +158,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /robot_2/registered_scan
+        Value: /robot_2/explored_areas
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
@@ -192,7 +192,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /robot_3/registered_scan
+        Value: /robot_3/explored_areas
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
@@ -226,7 +226,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /robot_4/registered_scan
+        Value: /robot_4/explored_areas
       Use Fixed Frame: true
       Use rainbow: true
       Value: true

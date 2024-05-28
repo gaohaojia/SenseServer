@@ -40,7 +40,7 @@ void WaypointTool::updateTopic()
 
   sub_ = raw_node->template create_subscription<nav_msgs::msg::Odometry>("/robot_" + std::to_string(robot_id) + "/state_estimation", 5 ,std::bind(&WaypointTool::odomHandler,this,std::placeholders::_1));
   
-  pub_ = raw_node->template create_publisher<geometry_msgs::msg::PointStamped>("/robot_" + std::to_string(robot_id) + "/local_way_point", qos_profile_);
+  pub_ = raw_node->template create_publisher<geometry_msgs::msg::PointStamped>("/robot_" + std::to_string(robot_id) + "/way_point", qos_profile_);
   pub_joy_ = raw_node->template create_publisher<sensor_msgs::msg::Joy>("joy", qos_profile_);
   clock_ = raw_node->get_clock();
 }
