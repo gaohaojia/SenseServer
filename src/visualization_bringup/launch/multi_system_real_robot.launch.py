@@ -58,7 +58,7 @@ def generate_launch_description():
     
     ld.add_action(TimerAction(period=5.0, actions=[OpaqueFunction(function=launch_robot_rviz, args=[robot_count])]))
 
-    ld.add_action(start_gicp_rviz)
+    # ld.add_action(start_gicp_rviz)
     #ld.add_action(start_small_gicp)
 
     return ld
