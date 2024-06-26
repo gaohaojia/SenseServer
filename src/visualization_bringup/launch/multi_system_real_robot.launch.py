@@ -11,13 +11,13 @@ def launch_robot_rviz(context: LaunchContext, robot_count):
     robot_count_int = int(context.perform_substitution(robot_count))
     start_list = []
     for idx in range(robot_count_int):
-        start_robot_rviz = Node(
-            package='rviz2',
-            executable='rviz2',
-            arguments=['-d', os.path.join(get_package_share_directory('visualization_bringup'), 'rviz', 'robot_' + str(idx) + '_visualization.rviz')],
-            output='screen'
-        )
-        #start_list.append(start_robot_rviz)
+        # start_robot_rviz = Node(
+        #     package='rviz2',
+        #     executable='rviz2',
+        #     arguments=['-d', os.path.join(get_package_share_directory('visualization_bringup'), 'rviz', 'robot_' + str(idx) + '_visualization.rviz')],
+        #     output='screen'
+        # )
+        # start_list.append(start_robot_rviz)
         start_explored_area = IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(
                 get_package_share_directory('explored_area'), 'launch', 'explored_area.launch.py')
@@ -42,6 +42,12 @@ def generate_launch_description():
         output='screen'
     )
 
+    start_multi_transform = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(
+            get_package_share_directory('multi_transform'), 'launch', 'multi_transform.launch.py')
+        ),
+    )
+
     # start_small_gicp = IncludeLaunchDescription(
     #     PythonLaunchDescriptionSource(os.path.join(
     #         get_package_share_directory('small_gicp'), 'launch', 'small_gicp.launch.py')
@@ -58,7 +64,8 @@ def generate_launch_description():
     
     ld.add_action(TimerAction(period=5.0, actions=[OpaqueFunction(function=launch_robot_rviz, args=[robot_count])]))
 
-    # ld.add_action(start_gicp_rviz)
+    ld.add_action(start_gicp_rviz)
+    ld.add_action(start_multi_transform)
     #ld.add_action(start_small_gicp)
 
     return ld
