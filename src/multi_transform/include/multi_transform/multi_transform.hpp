@@ -42,17 +42,36 @@ private:
   std::thread send_thread_;
   std::thread recv_thread_;
 
+  struct send_buffer{
+    int id;
+    std::vector<uint8_t> buffer;
+  };
+  std::queue<send_buffer> send_buffer_queue;
+
   void NetworkSendThread();
   void NetworkRecvThread();
 
+  void WayPoint0CallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg);
+  void WayPoint1CallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg);
+  void WayPoint2CallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg);
+  void WayPoint3CallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg);
+  void WayPoint4CallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg);
+
+  void SendData(const std::vector<uint8_t> & data_buffer, const int robot_id, const int msg_type);
+
   sensor_msgs::msg::PointCloud2 DeserializePointCloud2(const std::vector<uint8_t>& data);
   geometry_msgs::msg::TransformStamped DeserializeTransform(const std::vector<uint8_t>& data);
+
+  std::vector<uint8_t> SerializeWayPoint(const geometry_msgs::msg::PointStamped & point_msg);
 
   int port;
   std::string ip;
   int sockfd;
   struct sockaddr_in server_addr, client_addr, saved_client_addr[5];
-  bool client_life[5];
+
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr registered_scan_pub_[5];
+
+  rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr way_point_sub_[5];
 };
 } // namespace multi_transform
 
