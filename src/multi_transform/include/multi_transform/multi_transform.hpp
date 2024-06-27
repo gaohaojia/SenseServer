@@ -2,6 +2,7 @@
 #define MULTI_TRANSFORM
 
 #include <arpa/inet.h>
+#include <geometry_msgs/msg/detail/transform_stamped__struct.hpp>
 #include <memory>
 
 #include <netinet/in.h>
@@ -44,7 +45,8 @@ private:
   void NetworkSendThread();
   void NetworkRecvThread();
 
-  sensor_msgs::msg::PointCloud2 DeserializePointCloud2(const std::vector<uint8_t>& buffer);
+  sensor_msgs::msg::PointCloud2 DeserializePointCloud2(const std::vector<uint8_t>& data);
+  geometry_msgs::msg::TransformStamped DeserializeTransform(const std::vector<uint8_t>& data);
 
   int port;
   std::string ip;

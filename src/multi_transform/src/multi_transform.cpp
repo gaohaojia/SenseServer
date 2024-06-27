@@ -4,6 +4,7 @@
 #include <cstring>
 #include <functional>
 #include <geometry_msgs/msg/detail/point_stamped__struct.hpp>
+#include <geometry_msgs/msg/detail/transform_stamped__struct.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <memory>
 #include <netinet/in.h>
@@ -92,7 +93,7 @@ void MultiTransformNode::NetworkRecvThread()
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr registered_scan_pub_[5];
   for (int i = 0; i < 5; i++) {
     registered_scan_pub_[i] = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-      "robot_" + std::to_string(i) + "/total_registered_scan", 5);
+      "/robot_" + std::to_string(i) + "/total_registered_scan", 5);
   }
   while (rclcpp::ok()) {
     std::vector<uint8_t> buffer_tmp(BUFFER_SIZE);
@@ -134,10 +135,18 @@ void MultiTransformNode::NetworkRecvThread()
     }
 
     try {
-      if (type == 0) {
-        sensor_msgs::msg::PointCloud2 totalRegisteredScan =
-          MultiTransformNode::DeserializePointCloud2(buffer[id]);
-        registered_scan_pub_[id]->publish(totalRegisteredScan);
+      if (type == 0) { // PointCloud2
+        std::shared_ptr<sensor_msgs::msg::PointCloud2> totalRegisteredScan =
+          std::make_shared<sensor_msgs::msg::PointCloud2>(
+            MultiTransformNode::DeserializePointCloud2(buffer[id]));
+        registered_scan_pub_[id]->publish(*totalRegisteredScan);
+      } else if (type == 1) { // Transform
+        std::shared_ptr<geometry_msgs::msg::TransformStamped> transformStamped =
+          std::make_shared<geometry_msgs::msg::TransformStamped>(
+            MultiTransformNode::DeserializeTransform(buffer[id]));
+        std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
+          std::make_shared<tf2_ros::TransformBroadcaster>(this);
+        tf_broadcaster_->sendTransform(*transformStamped);
       }
     } catch (...) {
     }
@@ -166,6 +175,22 @@ MultiTransformNode::DeserializePointCloud2(const std::vector<uint8_t> & data)
   return pointcloud2_msg;
 }
 
+// Transform Deserialization
+geometry_msgs::msg::TransformStamped
+MultiTransformNode::DeserializeTransform(const std::vector<uint8_t> & data)
+{
+  rclcpp::SerializedMessage serialized_msg;
+  rclcpp::Serialization<geometry_msgs::msg::TransformStamped> serializer;
+
+  serialized_msg.reserve(data.size());
+  std::memcpy(serialized_msg.get_rcl_serialized_message().buffer, data.data(), data.size());
+  serialized_msg.get_rcl_serialized_message().buffer_length = data.size();
+
+  geometry_msgs::msg::TransformStamped transform_msg;
+  serializer.deserialize_message(&serialized_msg, &transform_msg);
+
+  return transform_msg;
+}
 } // namespace multi_transform
 
 #include "rclcpp_components/register_node_macro.hpp"
