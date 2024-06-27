@@ -70,7 +70,7 @@ void ExploredAreaNode::RegisteredScanCallBack(
     sensor_msgs::msg::PointCloud2 exploredArea2;
     pcl::toROSMsg(*exploredAreaCloud, exploredArea2);
     exploredArea2.header.stamp = registered_scan_msg->header.stamp;
-    exploredArea2.header.frame_id = "robot_" + std::to_string(robot_id) + "/map";
+    exploredArea2.header.frame_id = registered_scan_msg->header.frame_id;
     explored_area_pub_->publish(exploredArea2);
 
     exploredAreaDisplayCount = 0;

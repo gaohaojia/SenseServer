@@ -89,6 +89,7 @@ void MultiTransformNode::NetworkRecvThread()
 {
   int n, len = sizeof(client_addr);
   int packet_idx[5] = {0, 0, 0, 0, 0};
+  int packet_type[5] = {-1, -1, -1, -1, -1};
   std::vector<uint8_t> buffer[5];
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr registered_scan_pub_[5];
   for (int i = 0; i < 5; i++) {
@@ -114,11 +115,25 @@ void MultiTransformNode::NetworkRecvThread()
     std::memcpy(&idx, buffer_tmp.data() + sizeof(uint16_t), sizeof(idx));
     std::memcpy(&max_idx, buffer_tmp.data() + sizeof(uint32_t), sizeof(max_idx));
 
-    if (packet_idx[id] != idx) {
+    if (packet_type[id] == -1){
+      packet_type[id] = type;
+    }else if (packet_type[id] < type){
+      continue;
+    }else if (packet_type[id] > type){
+      packet_type[id] = type;
       packet_idx[id] = 0;
+      buffer[id] = std::vector<uint8_t>(0);
+    }
+    if (idx == 0){
+      packet_idx[id] = 0;
+      buffer[id] = std::vector<uint8_t>(0);
+    }else if (packet_idx[id] != idx) {
+      packet_idx[id] = 0;
+      packet_type[id] = -1;
       buffer[id] = std::vector<uint8_t>(0);
       continue;
     }
+
     packet_idx[id]++;
     if (packet_idx[id] == 1) {
       buffer[id].insert(buffer[id].begin(),
@@ -133,7 +148,6 @@ void MultiTransformNode::NetworkRecvThread()
     if (packet_idx[id] != max_idx) {
       continue;
     }
-
     try {
       if (type == 0) { // PointCloud2
         std::shared_ptr<sensor_msgs::msg::PointCloud2> totalRegisteredScan =
@@ -152,6 +166,7 @@ void MultiTransformNode::NetworkRecvThread()
     }
 
     packet_idx[id] = 0;
+    packet_type[id] = -1;
     buffer[id] = std::vector<uint8_t>(0);
 
     // sendto(sockfd, "got!", strlen("got!"), 0, (const struct sockaddr *)&client_addr, len);
