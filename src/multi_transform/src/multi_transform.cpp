@@ -134,13 +134,12 @@ void MultiTransformNode::NetworkRecvThread()
     }
 
     try {
-      sensor_msgs::msg::PointCloud2 totalRegisteredScan =
-        MultiTransformNode::DeserializePointCloud2(buffer[id]);
-      registered_scan_pub_[id]->publish(totalRegisteredScan);
+      if (type == 0) {
+        sensor_msgs::msg::PointCloud2 totalRegisteredScan =
+          MultiTransformNode::DeserializePointCloud2(buffer[id]);
+        registered_scan_pub_[id]->publish(totalRegisteredScan);
+      }
     } catch (...) {
-      packet_idx[id] = 0;
-      buffer[id] = std::vector<uint8_t>(0);
-      continue;
     }
 
     packet_idx[id] = 0;
