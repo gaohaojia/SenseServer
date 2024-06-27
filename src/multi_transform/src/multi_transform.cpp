@@ -53,16 +53,26 @@ MultiTransformNode::MultiTransformNode(const rclcpp::NodeOptions & options)
   }
 
   way_point_sub_[0] = this->create_subscription<geometry_msgs::msg::PointStamped>(
-    "/robot_0/way_point", 2, std::bind(&MultiTransformNode::WayPoint0CallBack, this, std::placeholders::_1));
+    "/robot_0/way_point",
+    2,
+    std::bind(&MultiTransformNode::WayPoint0CallBack, this, std::placeholders::_1));
   way_point_sub_[1] = this->create_subscription<geometry_msgs::msg::PointStamped>(
-    "/robot_1/way_point", 2, std::bind(&MultiTransformNode::WayPoint1CallBack, this, std::placeholders::_1));
+    "/robot_1/way_point",
+    2,
+    std::bind(&MultiTransformNode::WayPoint1CallBack, this, std::placeholders::_1));
   way_point_sub_[2] = this->create_subscription<geometry_msgs::msg::PointStamped>(
-    "/robot_2/way_point", 2, std::bind(&MultiTransformNode::WayPoint2CallBack, this, std::placeholders::_1));
+    "/robot_2/way_point",
+    2,
+    std::bind(&MultiTransformNode::WayPoint2CallBack, this, std::placeholders::_1));
   way_point_sub_[3] = this->create_subscription<geometry_msgs::msg::PointStamped>(
-    "/robot_3/way_point", 2, std::bind(&MultiTransformNode::WayPoint3CallBack, this, std::placeholders::_1));
+    "/robot_3/way_point",
+    2,
+    std::bind(&MultiTransformNode::WayPoint3CallBack, this, std::placeholders::_1));
   way_point_sub_[4] = this->create_subscription<geometry_msgs::msg::PointStamped>(
-    "/robot_4/way_point", 2, std::bind(&MultiTransformNode::WayPoint4CallBack, this, std::placeholders::_1));
-  
+    "/robot_4/way_point",
+    2,
+    std::bind(&MultiTransformNode::WayPoint4CallBack, this, std::placeholders::_1));
+
   // UDP
   if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
     RCLCPP_ERROR(this->get_logger(), "Socket creation failed!");
@@ -99,13 +109,19 @@ MultiTransformNode::~MultiTransformNode()
   close(sockfd);
 }
 
-void MultiTransformNode::NetworkSendThread() {
-  while (rclcpp::ok()){
+void MultiTransformNode::NetworkSendThread()
+{
+  while (rclcpp::ok()) {
     rclcpp::sleep_for(std::chrono::nanoseconds(10));
-    if (!send_buffer_queue.empty()){
+    if (!send_buffer_queue.empty()) {
       send_buffer s_buffer = send_buffer_queue.front();
       send_buffer_queue.pop();
-      sendto(sockfd, s_buffer.buffer.data(), s_buffer.buffer.size(), MSG_CONFIRM, (const struct sockaddr *)&saved_client_addr[s_buffer.id], sizeof(saved_client_addr[s_buffer.id]));
+      sendto(sockfd,
+             s_buffer.buffer.data(),
+             s_buffer.buffer.size(),
+             MSG_CONFIRM,
+             (const struct sockaddr *)&saved_client_addr[s_buffer.id],
+             sizeof(saved_client_addr[s_buffer.id]));
     }
   }
 }
@@ -138,19 +154,19 @@ void MultiTransformNode::NetworkRecvThread()
     // register client
     saved_client_addr[id] = client_addr;
 
-    if (packet_type[id] == -1){
+    if (packet_type[id] == -1) {
       packet_type[id] = type;
-    }else if (packet_type[id] < type){
+    } else if (packet_type[id] < type) {
       continue;
-    }else if (packet_type[id] > type){
+    } else if (packet_type[id] > type) {
       packet_type[id] = type;
       packet_idx[id] = 0;
       buffer[id] = std::vector<uint8_t>(0);
     }
-    if (idx == 0){
+    if (idx == 0) {
       packet_idx[id] = 0;
       buffer[id] = std::vector<uint8_t>(0);
-    }else if (packet_idx[id] != idx) {
+    } else if (packet_idx[id] != idx) {
       packet_idx[id] = 0;
       packet_type[id] = -1;
       buffer[id] = std::vector<uint8_t>(0);
@@ -194,37 +210,44 @@ void MultiTransformNode::NetworkRecvThread()
   }
 }
 
-void MultiTransformNode::WayPoint0CallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg){
-  std::vector<uint8_t> data_buffer =
-    MultiTransformNode::SerializeWayPoint(*way_point_msg);
+void MultiTransformNode::WayPoint0CallBack(
+  const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg)
+{
+  std::vector<uint8_t> data_buffer = MultiTransformNode::SerializeWayPoint(*way_point_msg);
   MultiTransformNode::SendData(data_buffer, 0, 0);
 }
 
-void MultiTransformNode::WayPoint1CallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg){
-  std::vector<uint8_t> data_buffer =
-    MultiTransformNode::SerializeWayPoint(*way_point_msg);
+void MultiTransformNode::WayPoint1CallBack(
+  const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg)
+{
+  std::vector<uint8_t> data_buffer = MultiTransformNode::SerializeWayPoint(*way_point_msg);
   MultiTransformNode::SendData(data_buffer, 1, 0);
 }
 
-void MultiTransformNode::WayPoint2CallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg){
-  std::vector<uint8_t> data_buffer =
-    MultiTransformNode::SerializeWayPoint(*way_point_msg);
+void MultiTransformNode::WayPoint2CallBack(
+  const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg)
+{
+  std::vector<uint8_t> data_buffer = MultiTransformNode::SerializeWayPoint(*way_point_msg);
   MultiTransformNode::SendData(data_buffer, 2, 0);
 }
 
-void MultiTransformNode::WayPoint3CallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg){
-  std::vector<uint8_t> data_buffer =
-    MultiTransformNode::SerializeWayPoint(*way_point_msg);
+void MultiTransformNode::WayPoint3CallBack(
+  const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg)
+{
+  std::vector<uint8_t> data_buffer = MultiTransformNode::SerializeWayPoint(*way_point_msg);
   MultiTransformNode::SendData(data_buffer, 3, 0);
 }
 
-void MultiTransformNode::WayPoint4CallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg){
-  std::vector<uint8_t> data_buffer =
-    MultiTransformNode::SerializeWayPoint(*way_point_msg);
+void MultiTransformNode::WayPoint4CallBack(
+  const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg)
+{
+  std::vector<uint8_t> data_buffer = MultiTransformNode::SerializeWayPoint(*way_point_msg);
   MultiTransformNode::SendData(data_buffer, 4, 0);
 }
 
-void MultiTransformNode::SendData(const std::vector<uint8_t> & data_buffer, const int robot_id, const int msg_type)
+void MultiTransformNode::SendData(const std::vector<uint8_t> & data_buffer,
+                                  const int robot_id,
+                                  const int msg_type)
 {
   const int total_packet = (data_buffer.size() + MAX_PACKET_SIZE - 1) / MAX_PACKET_SIZE;
   for (int i = 0; i < total_packet; i++) {
@@ -239,10 +262,10 @@ void MultiTransformNode::SendData(const std::vector<uint8_t> & data_buffer, cons
     std::memcpy(header.data() + sizeof(uint32_t), &max_idx, sizeof(max_idx));
     std::vector<uint8_t> packet;
     packet.insert(packet.end(), header.begin(), header.end());
-    packet.insert(
-      packet.end(),
-      data_buffer.begin() + i * MAX_PACKET_SIZE,
-      i == total_packet - 1 ? data_buffer.end() : data_buffer.begin() + (i + 1) * MAX_PACKET_SIZE);
+    packet.insert(packet.end(),
+                  data_buffer.begin() + i * MAX_PACKET_SIZE,
+                  i == total_packet - 1 ? data_buffer.end()
+                                        : data_buffer.begin() + (i + 1) * MAX_PACKET_SIZE);
     send_buffer s_buffer;
     s_buffer.buffer = packet;
     s_buffer.id = robot_id;
@@ -251,17 +274,16 @@ void MultiTransformNode::SendData(const std::vector<uint8_t> & data_buffer, cons
 }
 
 // Way Point Serialization
-std::vector<uint8_t> MultiTransformNode::SerializeWayPoint(
-  const geometry_msgs::msg::PointStamped & point_msg)
+std::vector<uint8_t>
+MultiTransformNode::SerializeWayPoint(const geometry_msgs::msg::PointStamped & point_msg)
 {
   rclcpp::SerializedMessage serialized_msg;
   rclcpp::Serialization<geometry_msgs::msg::PointStamped> serializer;
   serializer.serialize_message(&point_msg, &serialized_msg);
 
   std::vector<uint8_t> buffer_tmp(serialized_msg.size());
-  std::memcpy(buffer_tmp.data(),
-              serialized_msg.get_rcl_serialized_message().buffer,
-              serialized_msg.size());
+  std::memcpy(
+    buffer_tmp.data(), serialized_msg.get_rcl_serialized_message().buffer, serialized_msg.size());
 
   return buffer_tmp;
 }
