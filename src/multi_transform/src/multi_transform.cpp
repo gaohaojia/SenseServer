@@ -46,6 +46,7 @@ MultiTransformNode::MultiTransformNode(const rclcpp::NodeOptions & options)
   this->get_parameter("network_port", port);
   this->get_parameter("network_ip", ip);
 
+  // UDP
   if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
     RCLCPP_ERROR(this->get_logger(), "Socket creation failed!");
     return;
@@ -88,15 +89,20 @@ void MultiTransformNode::NetworkRecvThread()
   int n, len = sizeof(client_addr);
   int packet_idx[5] = {0, 0, 0, 0, 0};
   std::vector<uint8_t> buffer[5];
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr registered_scan_pub_[5];
+  for (int i = 0; i < 5; i++) {
+    registered_scan_pub_[i] = this->create_publisher<sensor_msgs::msg::PointCloud2>(
+      "robot_" + std::to_string(i) + "/total_registered_scan", 5);
+  }
   while (rclcpp::ok()) {
     std::vector<uint8_t> buffer_tmp(BUFFER_SIZE);
     n = recvfrom(sockfd,
-           buffer_tmp.data(),
-           BUFFER_SIZE,
-           MSG_WAITALL,
-           (struct sockaddr *)&client_addr,
-           (socklen_t *)&len);
-    if (n < 0){
+                 buffer_tmp.data(),
+                 BUFFER_SIZE,
+                 MSG_WAITALL,
+                 (struct sockaddr *)&client_addr,
+                 (socklen_t *)&len);
+    if (n < 0) {
       continue;
     }
     buffer_tmp.resize(n);
@@ -106,56 +112,55 @@ void MultiTransformNode::NetworkRecvThread()
     std::memcpy(&type, buffer_tmp.data() + sizeof(uint8_t), sizeof(type));
     std::memcpy(&idx, buffer_tmp.data() + sizeof(uint16_t), sizeof(idx));
     std::memcpy(&max_idx, buffer_tmp.data() + sizeof(uint32_t), sizeof(max_idx));
-    
-    RCLCPP_INFO(this->get_logger(), "now:%d id:%u type:%u idx:%u max_idx:%u", packet_idx[id], id, type, idx, max_idx);
-    if (packet_idx[id] != idx){
+
+    if (packet_idx[id] != idx) {
       packet_idx[id] = 0;
       buffer[id] = std::vector<uint8_t>(0);
       continue;
     }
     packet_idx[id]++;
-    RCLCPP_INFO(this->get_logger(), "1");
-    const int l = buffer[id].size() + buffer_tmp.size();
-    RCLCPP_INFO(this->get_logger(), "%d", l);
-    buffer[id].resize(l);
-    RCLCPP_INFO(this->get_logger(), "3");
-    if (packet_idx[id] == 1){
-      buffer[id].insert(buffer[id].begin(), buffer_tmp.begin() + sizeof(uint32_t) + sizeof(uint8_t), buffer_tmp.end());
-    }else{
-      buffer[id].insert(buffer[id].end(), buffer_tmp.begin() + sizeof(uint32_t) + sizeof(uint8_t), buffer_tmp.end());
+    if (packet_idx[id] == 1) {
+      buffer[id].insert(buffer[id].begin(),
+                        buffer_tmp.begin() + sizeof(uint32_t) + sizeof(uint8_t),
+                        buffer_tmp.end());
+    } else {
+      buffer[id].insert(buffer[id].end(),
+                        buffer_tmp.begin() + sizeof(uint32_t) + sizeof(uint8_t),
+                        buffer_tmp.end());
     }
 
-    RCLCPP_INFO(this->get_logger(), "%ld", buffer_tmp.size());
-
-    if (packet_idx[id] != max_idx){
+    if (packet_idx[id] != max_idx) {
       continue;
     }
 
-    std::shared_ptr<sensor_msgs::msg::PointCloud2> totalRegisteredScan =
-      std::make_shared<sensor_msgs::msg::PointCloud2>(
-        MultiTransformNode::DeserializePointCloud2(buffer[id]));
-    RCLCPP_INFO(this->get_logger(), "%d", totalRegisteredScan->header.stamp.sec);
+    try {
+      sensor_msgs::msg::PointCloud2 totalRegisteredScan =
+        MultiTransformNode::DeserializePointCloud2(buffer[id]);
+      registered_scan_pub_[id]->publish(totalRegisteredScan);
+    } catch (...) {
+      packet_idx[id] = 0;
+      buffer[id] = std::vector<uint8_t>(0);
+      continue;
+    }
 
     packet_idx[id] = 0;
     buffer[id] = std::vector<uint8_t>(0);
-    
+
     // sendto(sockfd, "got!", strlen("got!"), 0, (const struct sockaddr *)&client_addr, len);
   }
 }
 
-// 反序列化 PointCloud2 函数
+// PointCloud2 Deserialization
 sensor_msgs::msg::PointCloud2
-MultiTransformNode::DeserializePointCloud2(const std::vector<uint8_t> & buffer_tmp)
+MultiTransformNode::DeserializePointCloud2(const std::vector<uint8_t> & data)
 {
   rclcpp::SerializedMessage serialized_msg;
   rclcpp::Serialization<sensor_msgs::msg::PointCloud2> serializer;
 
-  // 将字节数组复制到序列化消息中
-  serialized_msg.get_rcl_serialized_message().buffer_length = buffer_tmp.size();
-  serialized_msg.get_rcl_serialized_message().buffer_capacity = buffer_tmp.size();
-  serialized_msg.get_rcl_serialized_message().buffer = const_cast<uint8_t *>(buffer_tmp.data());
+  serialized_msg.reserve(data.size());
+  std::memcpy(serialized_msg.get_rcl_serialized_message().buffer, data.data(), data.size());
+  serialized_msg.get_rcl_serialized_message().buffer_length = data.size();
 
-  // 反序列化消息
   sensor_msgs::msg::PointCloud2 pointcloud2_msg;
   serializer.deserialize_message(&serialized_msg, &pointcloud2_msg);
 
