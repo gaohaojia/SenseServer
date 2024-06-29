@@ -232,7 +232,7 @@ Visualization Manager:
       Value: true
     - Alpha: 1
       Class: rviz_default_plugins/PointStamped
-      Color: 204; 41; 204
+      Color: 204; 204; 41
       Enabled: true
       History Length: 1
       Name: Waypoint0
@@ -277,7 +277,7 @@ Visualization Manager:
       Value: true
     - Alpha: 1
       Class: rviz_default_plugins/PointStamped
-      Color: 204; 41; 204
+      Color: 0; 41; 204
       Enabled: true
       History Length: 1
       Name: Waypoint3
@@ -292,7 +292,7 @@ Visualization Manager:
       Value: true
     - Alpha: 1
       Class: rviz_default_plugins/PointStamped
-      Color: 204; 41; 204
+      Color: 204; 41; 0
       Enabled: true
       History Length: 1
       Name: Waypoint4
