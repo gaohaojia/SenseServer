@@ -59,10 +59,8 @@ private:
 
   void SendData(const std::vector<uint8_t> & data_buffer, const int robot_id, const int msg_type);
 
-  sensor_msgs::msg::PointCloud2 DeserializePointCloud2(const std::vector<uint8_t>& data);
-  geometry_msgs::msg::TransformStamped DeserializeTransform(const std::vector<uint8_t>& data);
-
-  std::vector<uint8_t> SerializeWayPoint(const geometry_msgs::msg::PointStamped & point_msg);
+  template <class T> std::vector<uint8_t> SerializeMsg(const T &msg);
+  template <class T> T DeserializeMsg(const std::vector<uint8_t> &data);
 
   int port;
   std::string ip;

@@ -191,12 +191,12 @@ void MultiTransformNode::NetworkRecvThread()
       if (type == 0) { // PointCloud2
         std::shared_ptr<sensor_msgs::msg::PointCloud2> totalRegisteredScan =
           std::make_shared<sensor_msgs::msg::PointCloud2>(
-            MultiTransformNode::DeserializePointCloud2(buffer[id]));
+            MultiTransformNode::DeserializeMsg<sensor_msgs::msg::PointCloud2>(buffer[id]));
         registered_scan_pub_[id]->publish(*totalRegisteredScan);
       } else if (type == 1) { // Transform
         std::shared_ptr<geometry_msgs::msg::TransformStamped> transformStamped =
           std::make_shared<geometry_msgs::msg::TransformStamped>(
-            MultiTransformNode::DeserializeTransform(buffer[id]));
+            MultiTransformNode::DeserializeMsg<geometry_msgs::msg::TransformStamped>(buffer[id]));
         std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
           std::make_shared<tf2_ros::TransformBroadcaster>(this);
         tf_broadcaster_->sendTransform(*transformStamped);
@@ -213,35 +213,35 @@ void MultiTransformNode::NetworkRecvThread()
 void MultiTransformNode::WayPoint0CallBack(
   const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg)
 {
-  std::vector<uint8_t> data_buffer = MultiTransformNode::SerializeWayPoint(*way_point_msg);
+  std::vector<uint8_t> data_buffer = MultiTransformNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
   MultiTransformNode::SendData(data_buffer, 0, 0);
 }
 
 void MultiTransformNode::WayPoint1CallBack(
   const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg)
 {
-  std::vector<uint8_t> data_buffer = MultiTransformNode::SerializeWayPoint(*way_point_msg);
+  std::vector<uint8_t> data_buffer = MultiTransformNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
   MultiTransformNode::SendData(data_buffer, 1, 0);
 }
 
 void MultiTransformNode::WayPoint2CallBack(
   const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg)
 {
-  std::vector<uint8_t> data_buffer = MultiTransformNode::SerializeWayPoint(*way_point_msg);
+  std::vector<uint8_t> data_buffer = MultiTransformNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
   MultiTransformNode::SendData(data_buffer, 2, 0);
 }
 
 void MultiTransformNode::WayPoint3CallBack(
   const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg)
 {
-  std::vector<uint8_t> data_buffer = MultiTransformNode::SerializeWayPoint(*way_point_msg);
+  std::vector<uint8_t> data_buffer = MultiTransformNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
   MultiTransformNode::SendData(data_buffer, 3, 0);
 }
 
 void MultiTransformNode::WayPoint4CallBack(
   const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg)
 {
-  std::vector<uint8_t> data_buffer = MultiTransformNode::SerializeWayPoint(*way_point_msg);
+  std::vector<uint8_t> data_buffer = MultiTransformNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
   MultiTransformNode::SendData(data_buffer, 4, 0);
 }
 
@@ -273,13 +273,12 @@ void MultiTransformNode::SendData(const std::vector<uint8_t> & data_buffer,
   }
 }
 
-// Way Point Serialization
-std::vector<uint8_t>
-MultiTransformNode::SerializeWayPoint(const geometry_msgs::msg::PointStamped & point_msg)
+// Serialization
+template <class T> std::vector<uint8_t> MultiTransformNode::SerializeMsg(const T & msg)
 {
   rclcpp::SerializedMessage serialized_msg;
-  rclcpp::Serialization<geometry_msgs::msg::PointStamped> serializer;
-  serializer.serialize_message(&point_msg, &serialized_msg);
+  rclcpp::Serialization<T> serializer;
+  serializer.serialize_message(&msg, &serialized_msg);
 
   std::vector<uint8_t> buffer_tmp(serialized_msg.size());
   std::memcpy(
@@ -288,38 +287,20 @@ MultiTransformNode::SerializeWayPoint(const geometry_msgs::msg::PointStamped & p
   return buffer_tmp;
 }
 
-// PointCloud2 Deserialization
-sensor_msgs::msg::PointCloud2
-MultiTransformNode::DeserializePointCloud2(const std::vector<uint8_t> & data)
+// Deserialization
+template <class T> T MultiTransformNode::DeserializeMsg(const std::vector<uint8_t> & data)
 {
   rclcpp::SerializedMessage serialized_msg;
-  rclcpp::Serialization<sensor_msgs::msg::PointCloud2> serializer;
+  rclcpp::Serialization<T> serializer;
 
   serialized_msg.reserve(data.size());
   std::memcpy(serialized_msg.get_rcl_serialized_message().buffer, data.data(), data.size());
   serialized_msg.get_rcl_serialized_message().buffer_length = data.size();
 
-  sensor_msgs::msg::PointCloud2 pointcloud2_msg;
-  serializer.deserialize_message(&serialized_msg, &pointcloud2_msg);
+  T msg;
+  serializer.deserialize_message(&serialized_msg, &msg);
 
-  return pointcloud2_msg;
-}
-
-// Transform Deserialization
-geometry_msgs::msg::TransformStamped
-MultiTransformNode::DeserializeTransform(const std::vector<uint8_t> & data)
-{
-  rclcpp::SerializedMessage serialized_msg;
-  rclcpp::Serialization<geometry_msgs::msg::TransformStamped> serializer;
-
-  serialized_msg.reserve(data.size());
-  std::memcpy(serialized_msg.get_rcl_serialized_message().buffer, data.data(), data.size());
-  serialized_msg.get_rcl_serialized_message().buffer_length = data.size();
-
-  geometry_msgs::msg::TransformStamped transform_msg;
-  serializer.deserialize_message(&serialized_msg, &transform_msg);
-
-  return transform_msg;
+  return msg;
 }
 } // namespace multi_transform
 
