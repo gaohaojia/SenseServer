@@ -17,6 +17,7 @@
 #include <rclcpp/utilities.hpp>
 #include <rmw/qos_profiles.h>
 #include <rmw/types.h>
+#include <sensor_msgs/msg/detail/image__struct.hpp>
 #include <sensor_msgs/msg/detail/point_cloud2__struct.hpp>
 #include <string>
 #include <sys/socket.h>
@@ -47,9 +48,11 @@ MultiTransformNode::MultiTransformNode(const rclcpp::NodeOptions & options)
   this->get_parameter("network_port", port);
   this->get_parameter("network_ip", ip);
 
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < MAX_ROBOT_COUNT; i++) {
     registered_scan_pub_[i] = this->create_publisher<sensor_msgs::msg::PointCloud2>(
       "/robot_" + std::to_string(i) + "/total_registered_scan", 5);
+    realsense_image_pub_[i] = this->create_publisher<sensor_msgs::msg::Image>(
+      "/robot_" + std::to_string(i) + "/image_raw", 5);
   }
 
   way_point_sub_[0] = this->create_subscription<geometry_msgs::msg::PointStamped>(
@@ -193,7 +196,12 @@ void MultiTransformNode::NetworkRecvThread()
           std::make_shared<sensor_msgs::msg::PointCloud2>(
             MultiTransformNode::DeserializeMsg<sensor_msgs::msg::PointCloud2>(buffer[id]));
         registered_scan_pub_[id]->publish(*totalRegisteredScan);
-      } else if (type == 1) { // Transform
+      } else if (type == 1) { // Image
+        std::shared_ptr<sensor_msgs::msg::Image> realsense_image =
+          std::make_shared<sensor_msgs::msg::Image>(
+            MultiTransformNode::DeserializeMsg<sensor_msgs::msg::Image>(buffer[id]));
+        realsense_image_pub_[id]->publish(*realsense_image);
+      } else if (type == 2) { // Transform
         std::shared_ptr<geometry_msgs::msg::TransformStamped> transformStamped =
           std::make_shared<geometry_msgs::msg::TransformStamped>(
             MultiTransformNode::DeserializeMsg<geometry_msgs::msg::TransformStamped>(buffer[id]));
@@ -213,35 +221,40 @@ void MultiTransformNode::NetworkRecvThread()
 void MultiTransformNode::WayPoint0CallBack(
   const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg)
 {
-  std::vector<uint8_t> data_buffer = MultiTransformNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
+  std::vector<uint8_t> data_buffer =
+    MultiTransformNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
   MultiTransformNode::SendData(data_buffer, 0, 0);
 }
 
 void MultiTransformNode::WayPoint1CallBack(
   const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg)
 {
-  std::vector<uint8_t> data_buffer = MultiTransformNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
+  std::vector<uint8_t> data_buffer =
+    MultiTransformNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
   MultiTransformNode::SendData(data_buffer, 1, 0);
 }
 
 void MultiTransformNode::WayPoint2CallBack(
   const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg)
 {
-  std::vector<uint8_t> data_buffer = MultiTransformNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
+  std::vector<uint8_t> data_buffer =
+    MultiTransformNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
   MultiTransformNode::SendData(data_buffer, 2, 0);
 }
 
 void MultiTransformNode::WayPoint3CallBack(
   const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg)
 {
-  std::vector<uint8_t> data_buffer = MultiTransformNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
+  std::vector<uint8_t> data_buffer =
+    MultiTransformNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
   MultiTransformNode::SendData(data_buffer, 3, 0);
 }
 
 void MultiTransformNode::WayPoint4CallBack(
   const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg)
 {
-  std::vector<uint8_t> data_buffer = MultiTransformNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
+  std::vector<uint8_t> data_buffer =
+    MultiTransformNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
   MultiTransformNode::SendData(data_buffer, 4, 0);
 }
 

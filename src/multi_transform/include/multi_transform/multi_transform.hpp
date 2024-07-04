@@ -17,6 +17,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <sensor_msgs/msg/detail/image__struct.hpp>
 #include <tf2/LinearMath/Transform.h>
 #include <thread>
 
@@ -29,6 +30,8 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
+
+#define MAX_ROBOT_COUNT 5
 
 namespace multi_transform
 {
@@ -65,11 +68,12 @@ private:
   int port;
   std::string ip;
   int sockfd;
-  struct sockaddr_in server_addr, client_addr, saved_client_addr[5];
+  struct sockaddr_in server_addr, client_addr, saved_client_addr[MAX_ROBOT_COUNT];
 
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr registered_scan_pub_[5];
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr registered_scan_pub_[MAX_ROBOT_COUNT];
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr realsense_image_pub_[MAX_ROBOT_COUNT];
 
-  rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr way_point_sub_[5];
+  rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr way_point_sub_[MAX_ROBOT_COUNT];
 };
 } // namespace multi_transform
 
