@@ -5,6 +5,7 @@ from launch import LaunchDescription, LaunchContext
 from launch_ros.actions import Node
 from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, OpaqueFunction, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 
 def launch_robot_rviz(context: LaunchContext, robot_count):
@@ -35,6 +36,12 @@ def generate_launch_description():
 
     rviz_config_file = os.path.join(get_package_share_directory('visualization_bringup'), 'rviz', 'multi_visualization.rviz')
 
+    start_foxglove_bridge = IncludeLaunchDescription(
+        XMLLaunchDescriptionSource(os.path.join(
+            get_package_share_directory('foxglove_bridge'), 'launch', 'foxglove_bridge_launch.xml')
+        )
+    )
+
     start_gicp_rviz = Node(
         package='rviz2',
         executable='rviz2',
@@ -64,6 +71,7 @@ def generate_launch_description():
     
     ld.add_action(TimerAction(period=5.0, actions=[OpaqueFunction(function=launch_robot_rviz, args=[robot_count])]))
 
+    ld.add_action(start_foxglove_bridge)
     ld.add_action(start_gicp_rviz)
     ld.add_action(start_multi_transform)
     #ld.add_action(start_small_gicp)
