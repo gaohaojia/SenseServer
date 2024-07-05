@@ -97,17 +97,21 @@ MultiTransformNode::MultiTransformNode(const rclcpp::NodeOptions & options)
   }
 
   send_thread_ = std::thread(&MultiTransformNode::NetworkSendThread, this);
-  recv_thread_ = std::thread(&MultiTransformNode::NetworkRecvThread, this);
+  for (int i = 0; i < MAX_ROBOT_COUNT; i++){
+    recv_thread_[i] = std::thread(&MultiTransformNode::NetworkRecvThread, this, i);
+  }
   RCLCPP_INFO(this->get_logger(), "Server start at ip: %s, port: %d", ip.c_str(), port);
 }
 
 MultiTransformNode::~MultiTransformNode()
 {
-  if (recv_thread_.joinable()) {
-    recv_thread_.join();
-  }
   if (send_thread_.joinable()) {
     send_thread_.join();
+  }
+  for (int i = 0; i < MAX_ROBOT_COUNT; i++){
+    if (recv_thread_[i].joinable()) {
+      recv_thread_[i].join();
+    }
   }
   close(sockfd);
 }
@@ -129,12 +133,12 @@ void MultiTransformNode::NetworkSendThread()
   }
 }
 
-void MultiTransformNode::NetworkRecvThread()
+void MultiTransformNode::NetworkRecvThread(const int robot_id)
 {
   int n, len = sizeof(client_addr);
-  int packet_idx[5] = {0, 0, 0, 0, 0};
-  int packet_type[5] = {-1, -1, -1, -1, -1};
-  std::vector<uint8_t> buffer[5];
+  int packet_idx = 0;
+  int packet_type = -1;
+  std::vector<uint8_t> buffer;
   while (rclcpp::ok()) {
     std::vector<uint8_t> buffer_tmp(BUFFER_SIZE);
     n = recvfrom(sockfd,
@@ -157,54 +161,54 @@ void MultiTransformNode::NetworkRecvThread()
     // register client
     saved_client_addr[id] = client_addr;
 
-    if (packet_type[id] == -1) {
-      packet_type[id] = type;
-    } else if (packet_type[id] < type) {
+    if (packet_type == -1) {
+      packet_type = type;
+    } else if (packet_type < type) {
       continue;
-    } else if (packet_type[id] > type) {
-      packet_type[id] = type;
-      packet_idx[id] = 0;
-      buffer[id] = std::vector<uint8_t>(0);
+    } else if (packet_type > type) {
+      packet_type = type;
+      packet_idx = 0;
+      buffer = std::vector<uint8_t>(0);
     }
     if (idx == 0) {
-      packet_idx[id] = 0;
-      buffer[id] = std::vector<uint8_t>(0);
-    } else if (packet_idx[id] != idx) {
-      packet_idx[id] = 0;
-      packet_type[id] = -1;
-      buffer[id] = std::vector<uint8_t>(0);
+      packet_idx = 0;
+      buffer = std::vector<uint8_t>(0);
+    } else if (packet_idx != idx) {
+      packet_idx = 0;
+      packet_type = -1;
+      buffer = std::vector<uint8_t>(0);
       continue;
     }
 
-    packet_idx[id]++;
-    if (packet_idx[id] == 1) {
-      buffer[id].insert(buffer[id].begin(),
+    packet_idx++;
+    if (packet_idx == 1) {
+      buffer.insert(buffer.begin(),
                         buffer_tmp.begin() + sizeof(uint32_t) + sizeof(uint8_t),
                         buffer_tmp.end());
     } else {
-      buffer[id].insert(buffer[id].end(),
+      buffer.insert(buffer.end(),
                         buffer_tmp.begin() + sizeof(uint32_t) + sizeof(uint8_t),
                         buffer_tmp.end());
     }
 
-    if (packet_idx[id] != max_idx) {
+    if (packet_idx != max_idx) {
       continue;
     }
     try {
       if (type == 0) { // PointCloud2
         std::shared_ptr<sensor_msgs::msg::PointCloud2> totalRegisteredScan =
           std::make_shared<sensor_msgs::msg::PointCloud2>(
-            MultiTransformNode::DeserializeMsg<sensor_msgs::msg::PointCloud2>(buffer[id]));
+            MultiTransformNode::DeserializeMsg<sensor_msgs::msg::PointCloud2>(buffer));
         registered_scan_pub_[id]->publish(*totalRegisteredScan);
       } else if (type == 1) { // Image
         std::shared_ptr<sensor_msgs::msg::Image> realsense_image =
           std::make_shared<sensor_msgs::msg::Image>(
-            MultiTransformNode::DeserializeMsg<sensor_msgs::msg::Image>(buffer[id]));
+            MultiTransformNode::DeserializeMsg<sensor_msgs::msg::Image>(buffer));
         realsense_image_pub_[id]->publish(*realsense_image);
       } else if (type == 2) { // Transform
         std::shared_ptr<geometry_msgs::msg::TransformStamped> transformStamped =
           std::make_shared<geometry_msgs::msg::TransformStamped>(
-            MultiTransformNode::DeserializeMsg<geometry_msgs::msg::TransformStamped>(buffer[id]));
+            MultiTransformNode::DeserializeMsg<geometry_msgs::msg::TransformStamped>(buffer));
         std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
           std::make_shared<tf2_ros::TransformBroadcaster>(this);
         tf_broadcaster_->sendTransform(*transformStamped);
@@ -212,9 +216,9 @@ void MultiTransformNode::NetworkRecvThread()
     } catch (...) {
     }
 
-    packet_idx[id] = 0;
-    packet_type[id] = -1;
-    buffer[id] = std::vector<uint8_t>(0);
+    packet_idx = 0;
+    packet_type = -1;
+    buffer = std::vector<uint8_t>(0);
   }
 }
 

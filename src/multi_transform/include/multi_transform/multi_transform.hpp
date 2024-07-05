@@ -43,7 +43,7 @@ public:
 
 private:
   std::thread send_thread_;
-  std::thread recv_thread_;
+  std::thread recv_thread_[MAX_ROBOT_COUNT];
 
   struct send_buffer{
     int id;
@@ -52,7 +52,7 @@ private:
   std::queue<send_buffer> send_buffer_queue;
 
   void NetworkSendThread();
-  void NetworkRecvThread();
+  void NetworkRecvThread(const int robot_id);
 
   void WayPoint0CallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg);
   void WayPoint1CallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg);
