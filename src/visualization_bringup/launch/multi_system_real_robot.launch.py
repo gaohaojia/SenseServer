@@ -55,15 +55,6 @@ def generate_launch_description():
         ),
     )
 
-    # start_small_gicp = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(os.path.join(
-    #         get_package_share_directory('small_gicp'), 'launch', 'small_gicp.launch.py')
-    #     ),
-    #     launch_arguments={
-    #         'robot_count': robot_count
-    #     }.items()
-    # )
-
     ld = LaunchDescription()
 
     # Add the actions
@@ -74,6 +65,5 @@ def generate_launch_description():
     ld.add_action(start_foxglove_bridge)
     ld.add_action(start_gicp_rviz)
     ld.add_action(start_multi_transform)
-    #ld.add_action(start_small_gicp)
 
     return ld

@@ -10,7 +10,7 @@ def generate_launch_description():
     network_ip = LaunchConfiguration('network_ip')
 
     declare_network_port = DeclareLaunchArgument('network_port', default_value='12130', description='')
-    declare_network_ip = DeclareLaunchArgument('network_ip', default_value='192.168.31.8', description='')
+    declare_network_ip = DeclareLaunchArgument('network_ip', default_value='192.168.31.207', description='')
 
     multi_transform_node = Node(
         package='multi_transform',
