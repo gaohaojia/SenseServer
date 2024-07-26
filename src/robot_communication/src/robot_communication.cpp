@@ -32,15 +32,15 @@
 #include <thread>
 #include <vector>
 
-#include "multi_transform/multi_transform.hpp"
+#include "robot_communication/robot_communication.hpp"
 
 #define MAX_PACKET_SIZE 64000
 #define BUFFER_SIZE 65535
 
-namespace multi_transform
+namespace robot_communication
 {
-MultiTransformNode::MultiTransformNode(const rclcpp::NodeOptions & options)
-  : Node("multi_transform", options)
+RobotCommunicationNode::RobotCommunicationNode(const rclcpp::NodeOptions & options)
+  : Node("robot_communication", options)
 {
   this->declare_parameter<int>("network_port", 12130);
   this->declare_parameter<std::string>("network_ip", "192.168.31.207");
@@ -53,28 +53,13 @@ MultiTransformNode::MultiTransformNode(const rclcpp::NodeOptions & options)
       "/robot_" + std::to_string(i) + "/total_registered_scan", 5);
     realsense_image_pub_[i] = this->create_publisher<sensor_msgs::msg::Image>(
       "/robot_" + std::to_string(i) + "/image_raw", 5);
+    way_point_sub_[i] = this->create_subscription<geometry_msgs::msg::PointStamped>(
+      "/robot_" + std::to_string(i) + "/way_point",
+      2,
+      [this, i](const geometry_msgs::msg::PointStamped::SharedPtr msg) {
+        WayPointCallBack(msg, i);
+      });
   }
-
-  way_point_sub_[0] = this->create_subscription<geometry_msgs::msg::PointStamped>(
-    "/robot_0/way_point",
-    2,
-    std::bind(&MultiTransformNode::WayPoint0CallBack, this, std::placeholders::_1));
-  way_point_sub_[1] = this->create_subscription<geometry_msgs::msg::PointStamped>(
-    "/robot_1/way_point",
-    2,
-    std::bind(&MultiTransformNode::WayPoint1CallBack, this, std::placeholders::_1));
-  way_point_sub_[2] = this->create_subscription<geometry_msgs::msg::PointStamped>(
-    "/robot_2/way_point",
-    2,
-    std::bind(&MultiTransformNode::WayPoint2CallBack, this, std::placeholders::_1));
-  way_point_sub_[3] = this->create_subscription<geometry_msgs::msg::PointStamped>(
-    "/robot_3/way_point",
-    2,
-    std::bind(&MultiTransformNode::WayPoint3CallBack, this, std::placeholders::_1));
-  way_point_sub_[4] = this->create_subscription<geometry_msgs::msg::PointStamped>(
-    "/robot_4/way_point",
-    2,
-    std::bind(&MultiTransformNode::WayPoint4CallBack, this, std::placeholders::_1));
 
   // UDP
   if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
@@ -96,19 +81,19 @@ MultiTransformNode::MultiTransformNode(const rclcpp::NodeOptions & options)
     return;
   }
 
-  send_thread_ = std::thread(&MultiTransformNode::NetworkSendThread, this);
-  for (int i = 0; i < MAX_ROBOT_COUNT; i++){
-    recv_thread_[i] = std::thread(&MultiTransformNode::NetworkRecvThread, this, i);
+  send_thread_ = std::thread(&RobotCommunicationNode::NetworkSendThread, this);
+  for (int i = 0; i < MAX_ROBOT_COUNT; i++) {
+    recv_thread_[i] = std::thread(&RobotCommunicationNode::NetworkRecvThread, this, i);
   }
   RCLCPP_INFO(this->get_logger(), "Server start at ip: %s, port: %d", ip.c_str(), port);
 }
 
-MultiTransformNode::~MultiTransformNode()
+RobotCommunicationNode::~RobotCommunicationNode()
 {
   if (send_thread_.joinable()) {
     send_thread_.join();
   }
-  for (int i = 0; i < MAX_ROBOT_COUNT; i++){
+  for (int i = 0; i < MAX_ROBOT_COUNT; i++) {
     if (recv_thread_[i].joinable()) {
       recv_thread_[i].join();
     }
@@ -116,7 +101,7 @@ MultiTransformNode::~MultiTransformNode()
   close(sockfd);
 }
 
-void MultiTransformNode::NetworkSendThread()
+void RobotCommunicationNode::NetworkSendThread()
 {
   while (rclcpp::ok()) {
     rclcpp::sleep_for(std::chrono::nanoseconds(10));
@@ -133,7 +118,7 @@ void MultiTransformNode::NetworkSendThread()
   }
 }
 
-void MultiTransformNode::NetworkRecvThread(const int robot_id)
+void RobotCommunicationNode::NetworkRecvThread(const int robot_id)
 {
   int n, len = sizeof(client_addr);
   int packet_idx = 0;
@@ -182,13 +167,11 @@ void MultiTransformNode::NetworkRecvThread(const int robot_id)
 
     packet_idx++;
     if (packet_idx == 1) {
-      buffer.insert(buffer.begin(),
-                        buffer_tmp.begin() + sizeof(uint32_t) + sizeof(uint8_t),
-                        buffer_tmp.end());
+      buffer.insert(
+        buffer.begin(), buffer_tmp.begin() + sizeof(uint32_t) + sizeof(uint8_t), buffer_tmp.end());
     } else {
-      buffer.insert(buffer.end(),
-                        buffer_tmp.begin() + sizeof(uint32_t) + sizeof(uint8_t),
-                        buffer_tmp.end());
+      buffer.insert(
+        buffer.end(), buffer_tmp.begin() + sizeof(uint32_t) + sizeof(uint8_t), buffer_tmp.end());
     }
 
     if (packet_idx != max_idx) {
@@ -198,17 +181,17 @@ void MultiTransformNode::NetworkRecvThread(const int robot_id)
       if (type == 0) { // PointCloud2
         std::shared_ptr<sensor_msgs::msg::PointCloud2> totalRegisteredScan =
           std::make_shared<sensor_msgs::msg::PointCloud2>(
-            MultiTransformNode::DeserializeMsg<sensor_msgs::msg::PointCloud2>(buffer));
+            RobotCommunicationNode::DeserializeMsg<sensor_msgs::msg::PointCloud2>(buffer));
         registered_scan_pub_[id]->publish(*totalRegisteredScan);
       } else if (type == 1) { // Image
         std::shared_ptr<sensor_msgs::msg::Image> realsense_image =
           std::make_shared<sensor_msgs::msg::Image>(
-            MultiTransformNode::DeserializeMsg<sensor_msgs::msg::Image>(buffer));
+            RobotCommunicationNode::DeserializeMsg<sensor_msgs::msg::Image>(buffer));
         realsense_image_pub_[id]->publish(*realsense_image);
       } else if (type == 2) { // Transform
         std::shared_ptr<geometry_msgs::msg::TransformStamped> transformStamped =
           std::make_shared<geometry_msgs::msg::TransformStamped>(
-            MultiTransformNode::DeserializeMsg<geometry_msgs::msg::TransformStamped>(buffer));
+            RobotCommunicationNode::DeserializeMsg<geometry_msgs::msg::TransformStamped>(buffer));
         std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
           std::make_shared<tf2_ros::TransformBroadcaster>(this);
         tf_broadcaster_->sendTransform(*transformStamped);
@@ -222,49 +205,17 @@ void MultiTransformNode::NetworkRecvThread(const int robot_id)
   }
 }
 
-void MultiTransformNode::WayPoint0CallBack(
-  const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg)
+void RobotCommunicationNode::WayPointCallBack(
+  const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg, const int robot_id)
 {
   std::vector<uint8_t> data_buffer =
-    MultiTransformNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
-  MultiTransformNode::SendData(data_buffer, 0, 0);
+    RobotCommunicationNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
+  RobotCommunicationNode::SendData(data_buffer, robot_id, 0);
 }
 
-void MultiTransformNode::WayPoint1CallBack(
-  const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg)
-{
-  std::vector<uint8_t> data_buffer =
-    MultiTransformNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
-  MultiTransformNode::SendData(data_buffer, 1, 0);
-}
-
-void MultiTransformNode::WayPoint2CallBack(
-  const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg)
-{
-  std::vector<uint8_t> data_buffer =
-    MultiTransformNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
-  MultiTransformNode::SendData(data_buffer, 2, 0);
-}
-
-void MultiTransformNode::WayPoint3CallBack(
-  const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg)
-{
-  std::vector<uint8_t> data_buffer =
-    MultiTransformNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
-  MultiTransformNode::SendData(data_buffer, 3, 0);
-}
-
-void MultiTransformNode::WayPoint4CallBack(
-  const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg)
-{
-  std::vector<uint8_t> data_buffer =
-    MultiTransformNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
-  MultiTransformNode::SendData(data_buffer, 4, 0);
-}
-
-void MultiTransformNode::SendData(const std::vector<uint8_t> & data_buffer,
-                                  const int robot_id,
-                                  const int msg_type)
+void RobotCommunicationNode::SendData(const std::vector<uint8_t> & data_buffer,
+                                      const int robot_id,
+                                      const int msg_type)
 {
   const int total_packet = (data_buffer.size() + MAX_PACKET_SIZE - 1) / MAX_PACKET_SIZE;
   for (int i = 0; i < total_packet; i++) {
@@ -291,7 +242,7 @@ void MultiTransformNode::SendData(const std::vector<uint8_t> & data_buffer,
 }
 
 // Serialization
-template <class T> std::vector<uint8_t> MultiTransformNode::SerializeMsg(const T & msg)
+template <class T> std::vector<uint8_t> RobotCommunicationNode::SerializeMsg(const T & msg)
 {
   rclcpp::SerializedMessage serialized_msg;
   rclcpp::Serialization<T> serializer;
@@ -305,7 +256,7 @@ template <class T> std::vector<uint8_t> MultiTransformNode::SerializeMsg(const T
 }
 
 // Deserialization
-template <class T> T MultiTransformNode::DeserializeMsg(const std::vector<uint8_t> & data)
+template <class T> T RobotCommunicationNode::DeserializeMsg(const std::vector<uint8_t> & data)
 {
   rclcpp::SerializedMessage serialized_msg;
   rclcpp::Serialization<T> serializer;
@@ -319,11 +270,11 @@ template <class T> T MultiTransformNode::DeserializeMsg(const std::vector<uint8_
 
   return msg;
 }
-} // namespace multi_transform
+} // namespace robot_communication
 
 #include "rclcpp_components/register_node_macro.hpp"
 
 // Register the component with class_loader.
 // This acts as a sort of entry point, allowing the component to be discoverable when its library
 // is being loaded into a running process.
-RCLCPP_COMPONENTS_REGISTER_NODE(multi_transform::MultiTransformNode)
+RCLCPP_COMPONENTS_REGISTER_NODE(robot_communication::RobotCommunicationNode)

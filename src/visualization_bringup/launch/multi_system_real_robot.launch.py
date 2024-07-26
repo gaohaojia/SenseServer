@@ -49,9 +49,9 @@ def generate_launch_description():
         output='screen'
     )
 
-    start_multi_transform = IncludeLaunchDescription(
+    start_robot_communication = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(
-            get_package_share_directory('multi_transform'), 'launch', 'multi_transform.launch.py')
+            get_package_share_directory('robot_communication'), 'launch', 'robot_communication.launch.py')
         ),
     )
 
@@ -64,6 +64,6 @@ def generate_launch_description():
 
     ld.add_action(start_foxglove_bridge)
     ld.add_action(start_gicp_rviz)
-    ld.add_action(start_multi_transform)
+    ld.add_action(start_robot_communication)
 
     return ld

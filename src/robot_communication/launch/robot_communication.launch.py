@@ -12,10 +12,10 @@ def generate_launch_description():
     declare_network_port = DeclareLaunchArgument('network_port', default_value='12130', description='')
     declare_network_ip = DeclareLaunchArgument('network_ip', default_value='192.168.31.207', description='')
 
-    multi_transform_node = Node(
-        package='multi_transform',
-        executable='multi_transform_node',
-        name='multi_transform',
+    robot_communication_node = Node(
+        package='robot_communication',
+        executable='robot_communication_node',
+        name='robot_communication',
         output='screen',
         respawn=True,
         parameters=[{
@@ -29,5 +29,5 @@ def generate_launch_description():
     ld.add_action(declare_network_port)
     ld.add_action(declare_network_ip)
     
-    ld.add_action(multi_transform_node)
+    ld.add_action(robot_communication_node)
     return ld

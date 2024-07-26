@@ -1,5 +1,5 @@
-#ifndef MULTI_TRANSFORM
-#define MULTI_TRANSFORM
+#ifndef robot_communication
+#define robot_communication
 
 #include <arpa/inet.h>
 #include <geometry_msgs/msg/detail/transform_stamped__struct.hpp>
@@ -33,13 +33,13 @@
 
 #define MAX_ROBOT_COUNT 5
 
-namespace multi_transform
+namespace robot_communication
 {
-class MultiTransformNode : public rclcpp::Node
+class RobotCommunicationNode : public rclcpp::Node
 {
 public:
-  MultiTransformNode(const rclcpp::NodeOptions & options);
-  ~MultiTransformNode() override;
+  RobotCommunicationNode(const rclcpp::NodeOptions & options);
+  ~RobotCommunicationNode() override;
 
 private:
   std::thread send_thread_;
@@ -54,11 +54,7 @@ private:
   void NetworkSendThread();
   void NetworkRecvThread(const int robot_id);
 
-  void WayPoint0CallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg);
-  void WayPoint1CallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg);
-  void WayPoint2CallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg);
-  void WayPoint3CallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg);
-  void WayPoint4CallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg);
+  void WayPointCallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg, const int robot_id);
 
   void SendData(const std::vector<uint8_t> & data_buffer, const int robot_id, const int msg_type);
 
@@ -75,6 +71,6 @@ private:
 
   rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr way_point_sub_[MAX_ROBOT_COUNT];
 };
-} // namespace multi_transform
+} // namespace robot_communication
 
 #endif
