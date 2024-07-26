@@ -42,13 +42,15 @@ namespace robot_communication
 RobotCommunicationNode::RobotCommunicationNode(const rclcpp::NodeOptions & options)
   : Node("robot_communication", options)
 {
+  this->declare_parameter<int>("robot_count", 3);
   this->declare_parameter<int>("network_port", 12130);
   this->declare_parameter<std::string>("network_ip", "192.168.31.207");
 
+  this->get_parameter("robot_count", robot_count);
   this->get_parameter("network_port", port);
   this->get_parameter("network_ip", ip);
 
-  for (int i = 0; i < MAX_ROBOT_COUNT; i++) {
+  for (int i = 0; i < robot_count; i++) {
     registered_scan_pub_[i] = this->create_publisher<sensor_msgs::msg::PointCloud2>(
       "/robot_" + std::to_string(i) + "/total_registered_scan", 5);
     realsense_image_pub_[i] = this->create_publisher<sensor_msgs::msg::Image>(
@@ -82,7 +84,7 @@ RobotCommunicationNode::RobotCommunicationNode(const rclcpp::NodeOptions & optio
   }
 
   send_thread_ = std::thread(&RobotCommunicationNode::NetworkSendThread, this);
-  for (int i = 0; i < MAX_ROBOT_COUNT; i++) {
+  for (int i = 0; i < robot_count; i++) {
     recv_thread_[i] = std::thread(&RobotCommunicationNode::NetworkRecvThread, this, i);
   }
   RCLCPP_INFO(this->get_logger(), "Server start at ip: %s, port: %d", ip.c_str(), port);
@@ -93,7 +95,7 @@ RobotCommunicationNode::~RobotCommunicationNode()
   if (send_thread_.joinable()) {
     send_thread_.join();
   }
-  for (int i = 0; i < MAX_ROBOT_COUNT; i++) {
+  for (int i = 0; i < robot_count; i++) {
     if (recv_thread_[i].joinable()) {
       recv_thread_[i].join();
     }

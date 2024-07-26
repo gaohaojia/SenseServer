@@ -42,6 +42,7 @@ public:
   ~RobotCommunicationNode() override;
 
 private:
+  int robot_count = 3;
   std::thread send_thread_;
   std::thread recv_thread_[MAX_ROBOT_COUNT];
 

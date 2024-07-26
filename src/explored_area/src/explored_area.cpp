@@ -3,23 +3,26 @@
 #include <memory>
 #include <rclcpp/qos.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <string>
 
 namespace explored_area
 {
 ExploredAreaNode::ExploredAreaNode(const rclcpp::NodeOptions & options)
   : Node("explored_area", options)
 {
-  this->declare_parameter<int>("robot_id", 0);
-  this->get_parameter("robot_id", robot_id);
+  this->declare_parameter<int>("robot_count", 3);
+  this->get_parameter("robot_count", robot_count);
 
-  registered_scan_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-    "total_registered_scan",
-    rclcpp::SensorDataQoS(),
-    std::bind(&ExploredAreaNode::RegisteredScanCallBack, this, std::placeholders::_1));
+  for (int i = 0; i < robot_count; i++){
+    registered_scan_sub_[i] = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+      "/robot_" + std::to_string(i) + "/total_registered_scan",
+      rclcpp::SensorDataQoS(),
+      std::bind(&ExploredAreaNode::RegisteredScanCallBack, this, std::placeholders::_1));
+  }
 
-  explored_area_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("explored_areas", 5);
-  explored_volume_pub_ = this->create_publisher<std_msgs::msg::Float32>("explored_volume", 5);
-  traveling_dis_pub_ = this->create_publisher<std_msgs::msg::Float32>("traveling_distance", 5);
+  explored_area_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/explored_areas", 5);
+  explored_volume_pub_ = this->create_publisher<std_msgs::msg::Float32>("/explored_volume", 5);
+  traveling_dis_pub_ = this->create_publisher<std_msgs::msg::Float32>("/traveling_distance", 5);
 
   exploredVolumeCloud =
     std::make_shared<pcl::PointCloud<pcl::PointXYZI>>();

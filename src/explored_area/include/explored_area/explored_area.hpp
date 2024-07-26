@@ -15,6 +15,8 @@
 #include <pcl/impl/point_types.hpp>
 #include <pcl/filters/voxel_grid.h>
 
+#define MAX_ROBOT_COUNT 5
+
 namespace explored_area
 {
 class ExploredAreaNode : public rclcpp::Node
@@ -23,7 +25,7 @@ public:
   ExploredAreaNode(const rclcpp::NodeOptions & options);
 
 private:
-  int robot_id;
+  int robot_count = 3;
   int exploredAreaDisplayCount = 0;
   int exploredAreaDisplayInterval = 1;
   double exploredVolumeVoxelSize = 0.1;
@@ -42,7 +44,7 @@ private:
   void
   RegisteredScanCallBack(const sensor_msgs::msg::PointCloud2::ConstSharedPtr registered_scan_msg);
 
-  rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr registered_scan_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr registered_scan_sub_[MAX_ROBOT_COUNT];
 
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr explored_area_pub_;
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr explored_volume_pub_;
