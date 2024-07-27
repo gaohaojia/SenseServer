@@ -1,5 +1,5 @@
-#ifndef robot_communication
-#define robot_communication
+#ifndef ROBOT_COMMUNICATION
+#define ROBOT_COMMUNICATION
 
 #include <arpa/inet.h>
 #include <geometry_msgs/msg/detail/transform_stamped__struct.hpp>
