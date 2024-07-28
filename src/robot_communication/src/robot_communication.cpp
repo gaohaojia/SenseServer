@@ -63,7 +63,25 @@ RobotCommunicationNode::RobotCommunicationNode(const rclcpp::NodeOptions & optio
       });
   }
 
-  // UDP
+  RobotCommunicationNode::init_server();
+}
+
+RobotCommunicationNode::~RobotCommunicationNode()
+{
+  if (send_thread_.joinable()) {
+    send_thread_.join();
+  }
+  for (int i = 0; i < robot_count; i++) {
+    if (recv_thread_[i].joinable()) {
+      recv_thread_[i].join();
+    }
+  }
+  close(sockfd);
+}
+
+// initialize the socket server
+void RobotCommunicationNode::init_server()
+{
   if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
     RCLCPP_ERROR(this->get_logger(), "Socket creation failed!");
     return;
@@ -88,19 +106,6 @@ RobotCommunicationNode::RobotCommunicationNode(const rclcpp::NodeOptions & optio
     recv_thread_[i] = std::thread(&RobotCommunicationNode::NetworkRecvThread, this, i);
   }
   RCLCPP_INFO(this->get_logger(), "Server start at ip: %s, port: %d", ip.c_str(), port);
-}
-
-RobotCommunicationNode::~RobotCommunicationNode()
-{
-  if (send_thread_.joinable()) {
-    send_thread_.join();
-  }
-  for (int i = 0; i < robot_count; i++) {
-    if (recv_thread_[i].joinable()) {
-      recv_thread_[i].join();
-    }
-  }
-  close(sockfd);
 }
 
 void RobotCommunicationNode::NetworkSendThread()

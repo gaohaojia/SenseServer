@@ -13,7 +13,7 @@ ExploredAreaNode::ExploredAreaNode(const rclcpp::NodeOptions & options)
   this->declare_parameter<int>("robot_count", 3);
   this->get_parameter("robot_count", robot_count);
 
-  for (int i = 0; i < robot_count; i++){
+  for (int i = 0; i < robot_count; i++) {
     registered_scan_sub_[i] = this->create_subscription<sensor_msgs::msg::PointCloud2>(
       "/robot_" + std::to_string(i) + "/total_registered_scan",
       rclcpp::SensorDataQoS(),
@@ -24,14 +24,10 @@ ExploredAreaNode::ExploredAreaNode(const rclcpp::NodeOptions & options)
   explored_volume_pub_ = this->create_publisher<std_msgs::msg::Float32>("/explored_volume", 5);
   traveling_dis_pub_ = this->create_publisher<std_msgs::msg::Float32>("/traveling_distance", 5);
 
-  exploredVolumeCloud =
-    std::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-  exploredVolumeCloud2 =
-    std::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-  exploredAreaCloud =
-    std::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-  exploredAreaCloud2 =
-    std::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+  exploredVolumeCloud = std::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+  exploredVolumeCloud2 = std::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+  exploredAreaCloud = std::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+  exploredAreaCloud2 = std::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
 
   exploredVolumeDwzFilter.setLeafSize(
     exploredVolumeVoxelSize, exploredVolumeVoxelSize, exploredVolumeVoxelSize);
@@ -78,8 +74,6 @@ void ExploredAreaNode::RegisteredScanCallBack(
 
     exploredAreaDisplayCount = 0;
   }
-
-  // fprintf(metricFilePtr, "%f %f %f %f\n", exploredVolume, travelingDis, runtime, timeDuration);
 
   std_msgs::msg::Float32 exploredVolumeMsg;
   exploredVolumeMsg.data = exploredVolume;

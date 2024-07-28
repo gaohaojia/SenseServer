@@ -46,7 +46,8 @@ private:
   std::thread send_thread_;
   std::thread recv_thread_[MAX_ROBOT_COUNT];
 
-  struct send_buffer{
+  struct send_buffer
+  {
     int id;
     std::vector<uint8_t> buffer;
   };
@@ -55,12 +56,15 @@ private:
   void NetworkSendThread();
   void NetworkRecvThread(const int robot_id);
 
-  void WayPointCallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg, const int robot_id);
+  void init_server();
+
+  void WayPointCallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg,
+                        const int robot_id);
 
   void SendData(const std::vector<uint8_t> & data_buffer, const int robot_id, const int msg_type);
 
-  template <class T> std::vector<uint8_t> SerializeMsg(const T &msg);
-  template <class T> T DeserializeMsg(const std::vector<uint8_t> &data);
+  template <class T> std::vector<uint8_t> SerializeMsg(const T & msg);
+  template <class T> T DeserializeMsg(const std::vector<uint8_t> & data);
 
   int port;
   std::string ip;
