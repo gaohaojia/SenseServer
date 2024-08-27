@@ -45,7 +45,7 @@ private:
   int port;
   std::string ip;
   int sockfd;
-  struct sockaddr_in server_addr, client_addr, saved_client_addr[MAX_ROBOT_COUNT];
+  struct sockaddr_in server_addr, saved_client_addr[MAX_ROBOT_COUNT];
 
   int robot_count = 3;
 

@@ -89,7 +89,6 @@ void RobotCommunicationNode::InitServer()
   }
 
   memset(&server_addr, 0, sizeof(server_addr));
-  memset(&client_addr, 0, sizeof(client_addr));
   memset(&saved_client_addr, 0, sizeof(saved_client_addr));
 
   server_addr.sin_family = AF_INET;
@@ -124,6 +123,9 @@ void RobotCommunicationNode::NetworkSendThread()
       continue;
     }
     send_buffer s_buffer = buffer_queue.front();
+    if (saved_client_addr[s_buffer.id].sin_addr.s_addr == 0) {
+      continue;
+    }
     buffer_queue.pop();
     if (sendto(sockfd,
                s_buffer.buffer.data(),
@@ -138,6 +140,8 @@ void RobotCommunicationNode::NetworkSendThread()
 
 void RobotCommunicationNode::NetworkRecvThread(const int robot_id)
 {
+  struct sockaddr_in client_addr;
+  memset(&client_addr, 0, sizeof(client_addr));
   int n, len = sizeof(client_addr);
   int packet_idx = 0;
   int packet_type = -1;
