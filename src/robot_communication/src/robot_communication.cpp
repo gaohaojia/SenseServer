@@ -72,9 +72,15 @@ RobotCommunicationNode::~RobotCommunicationNode()
   if (send_thread_.joinable()) {
     send_thread_.join();
   }
+  if (recv_thread_.joinable()) {
+    recv_thread_.join();
+  }
+  if (prepare_buffer_thread_.joinable()) {
+    prepare_buffer_thread_.join();
+  }
   for (int i = 0; i < robot_count; i++) {
-    if (recv_thread_[i].joinable()) {
-      recv_thread_[i].join();
+    if (parse_buffer_thread_[i].joinable()) {
+      parse_buffer_thread_[i].join();
     }
   }
   close(sockfd);
@@ -103,8 +109,10 @@ void RobotCommunicationNode::InitServer()
 
   send_thread_ = std::thread(&RobotCommunicationNode::NetworkSendThread, this);
   for (int i = 0; i < robot_count; i++) {
-    recv_thread_[i] = std::thread(&RobotCommunicationNode::NetworkRecvThread, this, i);
+    parse_buffer_thread_[i] = std::thread(&RobotCommunicationNode::ParseBufferThread, this, i);
   }
+  prepare_buffer_thread_ = std::thread(&RobotCommunicationNode::PrepareBufferThread, this);
+  recv_thread_ = std::thread(&RobotCommunicationNode::NetworkRecvThread, this);
   RCLCPP_INFO(this->get_logger(), "Server start at ip: %s, port: %d", ip.c_str(), port);
 }
 
@@ -112,7 +120,11 @@ void RobotCommunicationNode::WayPointCallBack(
   const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg, const int robot_id)
 {
   std::vector<uint8_t> data_buffer = SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
-  PrepareBuffer(data_buffer, robot_id, 0);
+  PrepareBuffer pthread_buffer = {robot_id, data_buffer, 0};
+  if (prepare_buffer_queue.size() >= MAX_BUFFER_QUEUE_SIZE) {
+    return;
+  }
+  prepare_buffer_queue.push(pthread_buffer);
 }
 
 void RobotCommunicationNode::NetworkSendThread()
@@ -122,11 +134,11 @@ void RobotCommunicationNode::NetworkSendThread()
       std::this_thread::sleep_for(std::chrono::nanoseconds(10));
       continue;
     }
-    send_buffer s_buffer = buffer_queue.front();
+    SendBuffer s_buffer = buffer_queue.front();
+    buffer_queue.pop();
     if (saved_client_addr[s_buffer.id].sin_addr.s_addr == 0) {
       continue;
     }
-    buffer_queue.pop();
     if (sendto(sockfd,
                s_buffer.buffer.data(),
                s_buffer.buffer.size(),
@@ -138,14 +150,11 @@ void RobotCommunicationNode::NetworkSendThread()
   }
 }
 
-void RobotCommunicationNode::NetworkRecvThread(const int robot_id)
+void RobotCommunicationNode::NetworkRecvThread()
 {
   struct sockaddr_in client_addr;
   memset(&client_addr, 0, sizeof(client_addr));
   int n, len = sizeof(client_addr);
-  int packet_idx = 0;
-  int packet_type = -1;
-  std::vector<uint8_t> buffer;
   while (rclcpp::ok()) {
     std::vector<uint8_t> buffer_tmp(BUFFER_SIZE);
     n = recvfrom(sockfd,
@@ -158,15 +167,73 @@ void RobotCommunicationNode::NetworkRecvThread(const int robot_id)
       continue;
     }
     buffer_tmp.resize(n);
+
+    uint8_t id;
+    std::memcpy(&id, buffer_tmp.data(), sizeof(id));
+    saved_client_addr[id] = client_addr;
+    if (parse_buffer_queue[id].size() >= MAX_BUFFER_QUEUE_SIZE) {
+      continue;
+    }
+    parse_buffer_queue[id].push(buffer_tmp);
+  }
+}
+
+void RobotCommunicationNode::PrepareBufferThread()
+{
+  while (rclcpp::ok()) {
+    if (prepare_buffer_queue.empty()) {
+      std::this_thread::sleep_for(std::chrono::nanoseconds(10));
+      continue;
+    }
+    PrepareBuffer pthread_buffer = prepare_buffer_queue.front();
+    prepare_buffer_queue.pop();
+    const int total_packet = (pthread_buffer.buffer.size() + MAX_PACKET_SIZE - 1) / MAX_PACKET_SIZE;
+    if (buffer_queue.size() >= MAX_BUFFER_QUEUE_SIZE) {
+      return;
+    }
+    for (int i = 0; i < total_packet; i++) {
+      uint8_t id = pthread_buffer.id;
+      uint8_t type = pthread_buffer.msg_type;
+      uint16_t idx = i;
+      uint8_t max_idx = total_packet;
+      std::vector<uint8_t> header(sizeof(uint32_t) + sizeof(uint8_t));
+      std::memcpy(header.data(), &id, sizeof(id));
+      std::memcpy(header.data() + sizeof(uint8_t), &type, sizeof(type));
+      std::memcpy(header.data() + sizeof(uint16_t), &idx, sizeof(idx));
+      std::memcpy(header.data() + sizeof(uint32_t), &max_idx, sizeof(max_idx));
+      std::vector<uint8_t> packet;
+      packet.insert(packet.end(), header.begin(), header.end());
+      packet.insert(packet.end(),
+                    pthread_buffer.buffer.begin() + i * MAX_PACKET_SIZE,
+                    i == total_packet - 1 ? pthread_buffer.buffer.end()
+                                          : pthread_buffer.buffer.begin() + (i + 1) * MAX_PACKET_SIZE);
+      SendBuffer s_buffer;
+      s_buffer.buffer = packet;
+      s_buffer.id = pthread_buffer.id;
+      buffer_queue.push(s_buffer);
+    }
+  }
+}
+
+void RobotCommunicationNode::ParseBufferThread(const int robot_id)
+{
+  int packet_idx = 0;
+  int packet_type = -1;
+  std::vector<uint8_t> buffer;
+  while (rclcpp::ok()) {
+    if (parse_buffer_queue[robot_id].empty()) {
+      std::this_thread::sleep_for(std::chrono::nanoseconds(10));
+      continue;
+    }
+    std::vector<uint8_t> buffer_tmp = parse_buffer_queue[robot_id].front();
+    parse_buffer_queue[robot_id].pop();
+
     uint8_t id, type, max_idx;
     uint16_t idx;
     std::memcpy(&id, buffer_tmp.data(), sizeof(id));
     std::memcpy(&type, buffer_tmp.data() + sizeof(uint8_t), sizeof(type));
     std::memcpy(&idx, buffer_tmp.data() + sizeof(uint16_t), sizeof(idx));
     std::memcpy(&max_idx, buffer_tmp.data() + sizeof(uint32_t), sizeof(max_idx));
-
-    // register client
-    saved_client_addr[id] = client_addr;
 
     if (packet_type == -1) {
       packet_type = type;
@@ -219,37 +286,6 @@ void RobotCommunicationNode::NetworkRecvThread(const int robot_id)
     packet_idx = 0;
     packet_type = -1;
     buffer = std::vector<uint8_t>(0);
-  }
-}
-
-void RobotCommunicationNode::PrepareBuffer(const std::vector<uint8_t> & data_buffer,
-                                           const int robot_id,
-                                           const int msg_type)
-{
-  const int total_packet = (data_buffer.size() + MAX_PACKET_SIZE - 1) / MAX_PACKET_SIZE;
-  if (buffer_queue.size() >= MAX_BUFFER_QUEUE_SIZE) {
-    return;
-  }
-  for (int i = 0; i < total_packet; i++) {
-    uint8_t id = robot_id;
-    uint8_t type = msg_type;
-    uint16_t idx = i;
-    uint8_t max_idx = total_packet;
-    std::vector<uint8_t> header(sizeof(uint32_t) + sizeof(uint8_t));
-    std::memcpy(header.data(), &id, sizeof(id));
-    std::memcpy(header.data() + sizeof(uint8_t), &type, sizeof(type));
-    std::memcpy(header.data() + sizeof(uint16_t), &idx, sizeof(idx));
-    std::memcpy(header.data() + sizeof(uint32_t), &max_idx, sizeof(max_idx));
-    std::vector<uint8_t> packet;
-    packet.insert(packet.end(), header.begin(), header.end());
-    packet.insert(packet.end(),
-                  data_buffer.begin() + i * MAX_PACKET_SIZE,
-                  i == total_packet - 1 ? data_buffer.end()
-                                        : data_buffer.begin() + (i + 1) * MAX_PACKET_SIZE);
-    send_buffer s_buffer;
-    s_buffer.buffer = packet;
-    s_buffer.id = robot_id;
-    buffer_queue.push(s_buffer);
   }
 }
 

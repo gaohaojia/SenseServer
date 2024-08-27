@@ -50,21 +50,32 @@ private:
   int robot_count = 3;
 
   std::thread send_thread_;
-  std::thread recv_thread_[MAX_ROBOT_COUNT];
+  std::thread recv_thread_;
+  std::thread prepare_buffer_thread_;
+  std::thread parse_buffer_thread_[MAX_ROBOT_COUNT];
 
-  struct send_buffer
+  struct SendBuffer
   {
     int id;
     std::vector<uint8_t> buffer;
   };
-  std::queue<send_buffer> buffer_queue;
+  std::queue<SendBuffer> buffer_queue;
+
+  struct PrepareBuffer
+  {
+    int id;
+    std::vector<uint8_t> buffer;
+    int msg_type;
+  };
+  std::queue<PrepareBuffer> prepare_buffer_queue;
+  std::queue<std::vector<uint8_t>> parse_buffer_queue[MAX_ROBOT_COUNT];
 
   void InitServer();
 
   void NetworkSendThread();
-  void NetworkRecvThread(const int robot_id);
-  void
-  PrepareBuffer(const std::vector<uint8_t> & data_buffer, const int robot_id, const int msg_type);
+  void NetworkRecvThread();
+  void PrepareBufferThread();
+  void ParseBufferThread(const int robot_id);
 
   void WayPointCallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg,
                         const int robot_id);
