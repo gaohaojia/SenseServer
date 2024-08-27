@@ -63,7 +63,8 @@ private:
 
   void NetworkSendThread();
   void NetworkRecvThread(const int robot_id);
-  void PrepareBuffer(const std::vector<uint8_t> & data_buffer, const int robot_id, const int msg_type);
+  void
+  PrepareBuffer(const std::vector<uint8_t> & data_buffer, const int robot_id, const int msg_type);
 
   void WayPointCallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg,
                         const int robot_id);
