@@ -36,7 +36,7 @@
 
 #define MAX_PACKET_SIZE 64000
 #define BUFFER_SIZE 65535
-#define MAX_BUFFER_QUEUE_SIZE 5
+#define MAX_BUFFER_QUEUE_SIZE 256
 
 namespace robot_communication
 {
@@ -223,6 +223,9 @@ void RobotCommunicationNode::PrepareBuffer(const std::vector<uint8_t> & data_buf
                                            const int msg_type)
 {
   const int total_packet = (data_buffer.size() + MAX_PACKET_SIZE - 1) / MAX_PACKET_SIZE;
+  if (buffer_queue.size() >= MAX_BUFFER_QUEUE_SIZE) {
+    return;
+  }
   for (int i = 0; i < total_packet; i++) {
     uint8_t id = robot_id;
     uint8_t type = msg_type;
@@ -242,9 +245,6 @@ void RobotCommunicationNode::PrepareBuffer(const std::vector<uint8_t> & data_buf
     send_buffer s_buffer;
     s_buffer.buffer = packet;
     s_buffer.id = robot_id;
-    if (buffer_queue.size() >= MAX_BUFFER_QUEUE_SIZE) {
-      buffer_queue.pop();
-    }
     buffer_queue.push(s_buffer);
   }
 }
