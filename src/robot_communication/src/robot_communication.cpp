@@ -36,6 +36,7 @@
 
 #define MAX_PACKET_SIZE 64000
 #define BUFFER_SIZE 65535
+#define MAX_BUFFER_QUEUE_SIZE 5
 
 namespace robot_communication
 {
@@ -63,7 +64,7 @@ RobotCommunicationNode::RobotCommunicationNode(const rclcpp::NodeOptions & optio
       });
   }
 
-  RobotCommunicationNode::init_server();
+  InitServer();
 }
 
 RobotCommunicationNode::~RobotCommunicationNode()
@@ -80,7 +81,7 @@ RobotCommunicationNode::~RobotCommunicationNode()
 }
 
 // initialize the socket server
-void RobotCommunicationNode::init_server()
+void RobotCommunicationNode::InitServer()
 {
   if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
     RCLCPP_ERROR(this->get_logger(), "Socket creation failed!");
@@ -108,19 +109,29 @@ void RobotCommunicationNode::init_server()
   RCLCPP_INFO(this->get_logger(), "Server start at ip: %s, port: %d", ip.c_str(), port);
 }
 
+void RobotCommunicationNode::WayPointCallBack(
+  const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg, const int robot_id)
+{
+  std::vector<uint8_t> data_buffer = SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
+  PrepareBuffer(data_buffer, robot_id, 0);
+}
+
 void RobotCommunicationNode::NetworkSendThread()
 {
   while (rclcpp::ok()) {
-    rclcpp::sleep_for(std::chrono::nanoseconds(10));
-    if (!send_buffer_queue.empty()) {
-      send_buffer s_buffer = send_buffer_queue.front();
-      send_buffer_queue.pop();
-      sendto(sockfd,
-             s_buffer.buffer.data(),
-             s_buffer.buffer.size(),
-             MSG_CONFIRM,
-             (const struct sockaddr *)&saved_client_addr[s_buffer.id],
-             sizeof(saved_client_addr[s_buffer.id]));
+    if (buffer_queue.empty()) {
+      std::this_thread::sleep_for(std::chrono::nanoseconds(10));
+      continue;
+    }
+    send_buffer s_buffer = buffer_queue.front();
+    buffer_queue.pop();
+    if (sendto(sockfd,
+               s_buffer.buffer.data(),
+               s_buffer.buffer.size(),
+               0,
+               (const struct sockaddr *)&saved_client_addr[s_buffer.id],
+               sizeof(saved_client_addr[s_buffer.id])) < 0) {
+      RCLCPP_ERROR(this->get_logger(), "Send failed!");
     }
   }
 }
@@ -186,22 +197,17 @@ void RobotCommunicationNode::NetworkRecvThread(const int robot_id)
     }
     try {
       if (type == 0) { // PointCloud2
-        std::shared_ptr<sensor_msgs::msg::PointCloud2> totalRegisteredScan =
-          std::make_shared<sensor_msgs::msg::PointCloud2>(
-            RobotCommunicationNode::DeserializeMsg<sensor_msgs::msg::PointCloud2>(buffer));
-        registered_scan_pub_[id]->publish(*totalRegisteredScan);
+        sensor_msgs::msg::PointCloud2 totalRegisteredScan =
+          DeserializeMsg<sensor_msgs::msg::PointCloud2>(buffer);
+        registered_scan_pub_[id]->publish(totalRegisteredScan);
       } else if (type == 1) { // Image
-        std::shared_ptr<sensor_msgs::msg::Image> realsense_image =
-          std::make_shared<sensor_msgs::msg::Image>(
-            RobotCommunicationNode::DeserializeMsg<sensor_msgs::msg::Image>(buffer));
-        realsense_image_pub_[id]->publish(*realsense_image);
+        sensor_msgs::msg::Image realsense_image = DeserializeMsg<sensor_msgs::msg::Image>(buffer);
+        realsense_image_pub_[id]->publish(realsense_image);
       } else if (type == 2) { // Transform
-        std::shared_ptr<geometry_msgs::msg::TransformStamped> transformStamped =
-          std::make_shared<geometry_msgs::msg::TransformStamped>(
-            RobotCommunicationNode::DeserializeMsg<geometry_msgs::msg::TransformStamped>(buffer));
-        std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
-          std::make_shared<tf2_ros::TransformBroadcaster>(this);
-        tf_broadcaster_->sendTransform(*transformStamped);
+        geometry_msgs::msg::TransformStamped transformStamped =
+          DeserializeMsg<geometry_msgs::msg::TransformStamped>(buffer);
+        tf2_ros::TransformBroadcaster tf_broadcaster_ = this;
+        tf_broadcaster_.sendTransform(transformStamped);
       }
     } catch (...) {
     }
@@ -212,17 +218,9 @@ void RobotCommunicationNode::NetworkRecvThread(const int robot_id)
   }
 }
 
-void RobotCommunicationNode::WayPointCallBack(
-  const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg, const int robot_id)
-{
-  std::vector<uint8_t> data_buffer =
-    RobotCommunicationNode::SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
-  RobotCommunicationNode::SendData(data_buffer, robot_id, 0);
-}
-
-void RobotCommunicationNode::SendData(const std::vector<uint8_t> & data_buffer,
-                                      const int robot_id,
-                                      const int msg_type)
+void RobotCommunicationNode::PrepareBuffer(const std::vector<uint8_t> & data_buffer,
+                                           const int robot_id,
+                                           const int msg_type)
 {
   const int total_packet = (data_buffer.size() + MAX_PACKET_SIZE - 1) / MAX_PACKET_SIZE;
   for (int i = 0; i < total_packet; i++) {
@@ -244,7 +242,10 @@ void RobotCommunicationNode::SendData(const std::vector<uint8_t> & data_buffer,
     send_buffer s_buffer;
     s_buffer.buffer = packet;
     s_buffer.id = robot_id;
-    send_buffer_queue.push(s_buffer);
+    if (buffer_queue.size() >= MAX_BUFFER_QUEUE_SIZE) {
+      buffer_queue.pop();
+    }
+    buffer_queue.push(s_buffer);
   }
 }
 

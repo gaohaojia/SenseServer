@@ -42,7 +42,13 @@ public:
   ~RobotCommunicationNode() override;
 
 private:
+  int port;
+  std::string ip;
+  int sockfd;
+  struct sockaddr_in server_addr, client_addr, saved_client_addr[MAX_ROBOT_COUNT];
+
   int robot_count = 3;
+
   std::thread send_thread_;
   std::thread recv_thread_[MAX_ROBOT_COUNT];
 
@@ -51,25 +57,19 @@ private:
     int id;
     std::vector<uint8_t> buffer;
   };
-  std::queue<send_buffer> send_buffer_queue;
+  std::queue<send_buffer> buffer_queue;
+
+  void InitServer();
 
   void NetworkSendThread();
   void NetworkRecvThread(const int robot_id);
-
-  void init_server();
+  void PrepareBuffer(const std::vector<uint8_t> & data_buffer, const int robot_id, const int msg_type);
 
   void WayPointCallBack(const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg,
                         const int robot_id);
 
-  void SendData(const std::vector<uint8_t> & data_buffer, const int robot_id, const int msg_type);
-
   template <class T> std::vector<uint8_t> SerializeMsg(const T & msg);
   template <class T> T DeserializeMsg(const std::vector<uint8_t> & data);
-
-  int port;
-  std::string ip;
-  int sockfd;
-  struct sockaddr_in server_addr, client_addr, saved_client_addr[MAX_ROBOT_COUNT];
 
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr registered_scan_pub_[MAX_ROBOT_COUNT];
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr realsense_image_pub_[MAX_ROBOT_COUNT];
