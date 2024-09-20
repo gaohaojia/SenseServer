@@ -28,37 +28,37 @@ Visualization Manager:
     - Class: rviz_default_plugins/Axes
       Enabled: true
       Length: 1
-      Name: Vehicle0
+      Name: Base_Link_Axes0
       Radius: 0.10000000149011612
-      Reference Frame: robot_0/vehicle
+      Reference Frame: robot_0/base_link
       Value: true
     - Class: rviz_default_plugins/Axes
       Enabled: true
       Length: 1
-      Name: Vehicle1
+      Name: Base_Link_Axes1
       Radius: 0.10000000149011612
-      Reference Frame: robot_1/vehicle
+      Reference Frame: robot_1/base_link
       Value: true
     - Class: rviz_default_plugins/Axes
       Enabled: true
       Length: 1
-      Name: Vehicle2
+      Name: Base_Link_Axes2
       Radius: 0.10000000149011612
-      Reference Frame: robot_2/vehicle
+      Reference Frame: robot_2/base_link
       Value: true
     - Class: rviz_default_plugins/Axes
       Enabled: true
       Length: 1
-      Name: Vehicle3
+      Name: Base_Link_Axes3
       Radius: 0.10000000149011612
-      Reference Frame: robot_3/vehicle
+      Reference Frame: robot_3/base_link
       Value: true
     - Class: rviz_default_plugins/Axes
       Enabled: true
       Length: 1
-      Name: Vehicle4
+      Name: Base_Link_Axes4
       Radius: 0.10000000149011612
-      Reference Frame: robot_4/vehicle
+      Reference Frame: robot_4/base_link
       Value: true
     - Alpha: 0.20000000298023224
       Autocompute Intensity Bounds: true
@@ -305,7 +305,7 @@ Visualization Manager:
       Name: Current View
       Near Clip Distance: 0.009999999776482582
       Pitch: 1.5697963237762451
-      Target Frame: robot_0/vehicle
+      Target Frame: robot_0/base_link
       Value: Orbit (rviz)
       Yaw: 3.1404049396514893
     Saved: ~
