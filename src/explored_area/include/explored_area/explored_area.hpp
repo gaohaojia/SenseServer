@@ -32,17 +32,27 @@ class ExploredAreaNode : public rclcpp::Node {
 
   pcl::VoxelGrid<pcl::PointXYZI> exploredVolumeDwzFilter;
   pcl::VoxelGrid<pcl::PointXYZI> exploredAreaDwzFilter;
+  pcl::VoxelGrid<pcl::PointXYZRGB> exploredRGBVolumeDwzFilter;
+  pcl::VoxelGrid<pcl::PointXYZRGB> exploredRGBAreaDwzFilter;
 
   pcl::PointCloud<pcl::PointXYZI>::Ptr exploredVolumeCloud;
   pcl::PointCloud<pcl::PointXYZI>::Ptr exploredVolumeCloud2;
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr exploredRGBVolumeCloud;
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr exploredRGBVolumeCloud2;
   pcl::PointCloud<pcl::PointXYZI>::Ptr exploredAreaCloud;
   pcl::PointCloud<pcl::PointXYZI>::Ptr exploredAreaCloud2;
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr exploredRGBAreaCloud;
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr exploredRGBAreaCloud2;
 
   void RegisteredScanCallBack(
     const sensor_msgs::msg::PointCloud2::ConstSharedPtr registered_scan_msg);
+  void RealsenseScanCallBack(
+    const sensor_msgs::msg::PointCloud2::ConstSharedPtr realsense_scan_msg);
 
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr
     registered_scan_sub_[MAX_ROBOT_COUNT];
+  rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr
+    realsense_scan_sub_[MAX_ROBOT_COUNT];
 
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
     explored_area_pub_;

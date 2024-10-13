@@ -51,8 +51,9 @@ RobotCommunicationNode::RobotCommunicationNode(
     registered_scan_pub_[i] =
       this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/robot_" + std::to_string(i) + "/total_registered_scan", 5);
-    realsense_image_pub_[i] = this->create_publisher<sensor_msgs::msg::Image>(
-      "/robot_" + std::to_string(i) + "/image_raw", 5);
+    realsense_pointcloud_pub_[i] =
+      this->create_publisher<sensor_msgs::msg::PointCloud2>(
+        "/robot_" + std::to_string(i) + "/realsense_pointcloud", 5);
     way_point_sub_[i] =
       this->create_subscription<geometry_msgs::msg::PointStamped>(
         "/robot_" + std::to_string(i) + "/way_point", 2,
@@ -266,9 +267,9 @@ void RobotCommunicationNode::ParseBufferThread(const int robot_id) {
           DeserializeMsg<sensor_msgs::msg::PointCloud2>(buffer);
         registered_scan_pub_[id]->publish(totalRegisteredScan);
       } else if (type == 1) {  // Image
-        sensor_msgs::msg::Image realsense_image =
-          DeserializeMsg<sensor_msgs::msg::Image>(buffer);
-        realsense_image_pub_[id]->publish(realsense_image);
+        sensor_msgs::msg::PointCloud2 realsense_pointcloud =
+          DeserializeMsg<sensor_msgs::msg::PointCloud2>(buffer);
+        realsense_pointcloud_pub_[id]->publish(realsense_pointcloud);
       } else if (type == 2) {  // Transform
         geometry_msgs::msg::TransformStamped transformStamped =
           DeserializeMsg<geometry_msgs::msg::TransformStamped>(buffer);

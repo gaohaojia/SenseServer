@@ -80,8 +80,8 @@ class RobotCommunicationNode : public rclcpp::Node {
 
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
     registered_scan_pub_[MAX_ROBOT_COUNT];
-  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr
-    realsense_image_pub_[MAX_ROBOT_COUNT];
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
+    realsense_pointcloud_pub_[MAX_ROBOT_COUNT];
 
   rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr
     way_point_sub_[MAX_ROBOT_COUNT];
