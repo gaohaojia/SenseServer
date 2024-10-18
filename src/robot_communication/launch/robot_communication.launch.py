@@ -12,7 +12,7 @@ def generate_launch_description():
 
     declare_robot_count = DeclareLaunchArgument('robot_count', default_value='3', description='')
     declare_network_port = DeclareLaunchArgument('network_port', default_value='12130', description='')
-    declare_network_ip = DeclareLaunchArgument('network_ip', default_value='192.168.31.207', description='')
+    declare_network_ip = DeclareLaunchArgument('network_ip', default_value='192.168.31.208', description='')
 
     robot_communication_node = Node(
         package='robot_communication',

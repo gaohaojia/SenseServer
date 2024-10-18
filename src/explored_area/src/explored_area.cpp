@@ -25,7 +25,7 @@ ExploredAreaNode::ExploredAreaNode(const rclcpp::NodeOptions &options)
   }
 
   for (int i = 0; i < robot_count; i++) {
-    registered_scan_sub_[i] =
+    realsense_scan_sub_[i] =
       this->create_subscription<sensor_msgs::msg::PointCloud2>(
         "/robot_" + std::to_string(i) + "/realsense_pointcloud",
         rclcpp::SensorDataQoS(),

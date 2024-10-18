@@ -45,28 +45,21 @@ class RobotCommunicationNode : public rclcpp::Node {
 
   std::thread send_thread_;
   std::thread recv_thread_;
-  std::thread prepare_buffer_thread_;
   std::thread parse_buffer_thread_[MAX_ROBOT_COUNT];
 
   struct SendBuffer {
-    int id;
+    int id = -1;
     std::vector<uint8_t> buffer;
+    int msg_type = -1;
   };
-  std::queue<SendBuffer> buffer_queue;
-
-  struct PrepareBuffer {
-    int id;
-    std::vector<uint8_t> buffer;
-    int msg_type;
-  };
-  std::queue<PrepareBuffer> prepare_buffer_queue;
-  std::queue<std::vector<uint8_t>> parse_buffer_queue[MAX_ROBOT_COUNT];
+  std::queue<SendBuffer> send_buffer_queue;
+  std::queue<std::vector<uint8_t>> recv_buffer_queue[MAX_ROBOT_COUNT];
 
   void InitServer();
 
   void NetworkSendThread();
   void NetworkRecvThread();
-  void PrepareBufferThread();
+  void PrepareBuffer(const SendBuffer& buffer);
   void ParseBufferThread(const int robot_id);
 
   void WayPointCallBack(
