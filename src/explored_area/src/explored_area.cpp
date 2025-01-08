@@ -35,6 +35,8 @@ ExploredAreaNode::ExploredAreaNode(const rclcpp::NodeOptions &options)
 
   explored_area_pub_ =
     this->create_publisher<sensor_msgs::msg::PointCloud2>("/explored_areas", 5);
+  explored_rgb_area_pub_ =
+    this->create_publisher<sensor_msgs::msg::PointCloud2>("/explored_rgb_areas", 5);
   explored_volume_pub_ =
     this->create_publisher<std_msgs::msg::Float32>("/explored_volume", 5);
   traveling_dis_pub_ =
@@ -131,6 +133,12 @@ void ExploredAreaNode::RealsenseScanCallBack(
                    exploredRGBVolumeCloud->points.size();
 
   *exploredRGBAreaCloud += *laserCloud;
+
+  sensor_msgs::msg::PointCloud2 exploredRGBArea2;
+  pcl::toROSMsg(*exploredRGBAreaCloud, exploredRGBArea2);
+  exploredRGBArea2.header.stamp = realsense_scan_msg->header.stamp;
+  exploredRGBArea2.header.frame_id = realsense_scan_msg->header.frame_id;
+  explored_rgb_area_pub_->publish(exploredRGBArea2);
 }
 }  // namespace explored_area
 

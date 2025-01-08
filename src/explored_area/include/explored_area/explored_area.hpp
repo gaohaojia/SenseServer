@@ -56,6 +56,8 @@ class ExploredAreaNode : public rclcpp::Node {
 
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
     explored_area_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
+    explored_rgb_area_pub_;
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr explored_volume_pub_;
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr traveling_dis_pub_;
 };
