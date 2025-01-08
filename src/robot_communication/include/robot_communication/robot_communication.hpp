@@ -15,7 +15,9 @@
 #include <queue>
 #include <rclcpp/node.hpp>
 #include <rclcpp/node_options.hpp>
+#include <rclcpp/qos_event.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/detail/image__struct.hpp>
 #include <thread>
 
 #include "geometry_msgs/msg/transform_stamped.hpp"
@@ -26,6 +28,7 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 
 #define MAX_ROBOT_COUNT 5
 
@@ -75,6 +78,10 @@ class RobotCommunicationNode : public rclcpp::Node {
     registered_scan_pub_[MAX_ROBOT_COUNT];
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
     realsense_pointcloud_pub_[MAX_ROBOT_COUNT];
+  rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr
+    costmap_pub_[MAX_ROBOT_COUNT];
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr
+    image_pub_[MAX_ROBOT_COUNT];
 
   rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr
     way_point_sub_[MAX_ROBOT_COUNT];

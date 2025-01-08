@@ -51,9 +51,15 @@ RobotCommunicationNode::RobotCommunicationNode(
     registered_scan_pub_[i] =
       this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/robot_" + std::to_string(i) + "/total_registered_scan", 5);
+    costmap_pub_[i] =
+      this->create_publisher<nav_msgs::msg::OccupancyGrid>(
+        "/robot_" + std::to_string(i) + "/costmap", 5);
     realsense_pointcloud_pub_[i] =
       this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/robot_" + std::to_string(i) + "/realsense_pointcloud", 5);
+    image_pub_[i] =
+      this->create_publisher<sensor_msgs::msg::Image>(
+        "/robot_" + std::to_string(i) + "/image_raw", 5);
     way_point_sub_[i] =
       this->create_subscription<geometry_msgs::msg::PointStamped>(
         "/robot_" + std::to_string(i) + "/way_point", 2,
@@ -246,7 +252,7 @@ void RobotCommunicationNode::ParseBufferThread(const int robot_id) {
         sensor_msgs::msg::PointCloud2 totalRegisteredScan =
           DeserializeMsg<sensor_msgs::msg::PointCloud2>(buffer);
         registered_scan_pub_[id]->publish(totalRegisteredScan);
-      } else if (type == 1) {  // Image
+      } else if (type == 1) {  // Realsense PointCloud2
         sensor_msgs::msg::PointCloud2 realsense_pointcloud =
           DeserializeMsg<sensor_msgs::msg::PointCloud2>(buffer);
         realsense_pointcloud_pub_[id]->publish(realsense_pointcloud);
@@ -255,6 +261,14 @@ void RobotCommunicationNode::ParseBufferThread(const int robot_id) {
           DeserializeMsg<geometry_msgs::msg::TransformStamped>(buffer);
         tf2_ros::TransformBroadcaster tf_broadcaster_ = this;
         tf_broadcaster_.sendTransform(transformStamped);
+      } else if (type == 3) {
+        nav_msgs::msg::OccupancyGrid costmap =
+          DeserializeMsg<nav_msgs::msg::OccupancyGrid>(buffer);
+        costmap_pub_[id]->publish(costmap);
+      } else if (type == 4) {
+        sensor_msgs::msg::Image image =
+          DeserializeMsg<sensor_msgs::msg::Image>(buffer);
+        image_pub_[id]->publish(image);
       }
     } catch (...) {
     }
