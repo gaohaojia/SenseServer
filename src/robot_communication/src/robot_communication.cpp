@@ -47,13 +47,18 @@ RobotCommunicationNode::RobotCommunicationNode(
   this->get_parameter("network_port", port);
   this->get_parameter("network_ip", ip);
 
+  rclcpp::QoS qos(rclcpp::KeepLast(10));
+  qos.durability(rclcpp::DurabilityPolicy::TransientLocal);
+  qos.reliability(rclcpp::ReliabilityPolicy::Reliable);
+  qos.history(rclcpp::HistoryPolicy::KeepLast);
+
   for (int i = 0; i < robot_count; i++) {
     registered_scan_pub_[i] =
       this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/robot_" + std::to_string(i) + "/total_registered_scan", 5);
-    costmap_pub_[i] =
+    map_pub_[i] =
       this->create_publisher<nav_msgs::msg::OccupancyGrid>(
-        "/robot_" + std::to_string(i) + "/costmap", 5);
+        "/robot_" + std::to_string(i) + "/map", qos);
     realsense_pointcloud_pub_[i] =
       this->create_publisher<sensor_msgs::msg::PointCloud2>(
         "/robot_" + std::to_string(i) + "/realsense_pointcloud", 5);
@@ -262,9 +267,9 @@ void RobotCommunicationNode::ParseBufferThread(const int robot_id) {
         tf2_ros::TransformBroadcaster tf_broadcaster_ = this;
         tf_broadcaster_.sendTransform(transformStamped);
       } else if (type == 3) {
-        nav_msgs::msg::OccupancyGrid costmap =
+        nav_msgs::msg::OccupancyGrid map =
           DeserializeMsg<nav_msgs::msg::OccupancyGrid>(buffer);
-        costmap_pub_[id]->publish(costmap);
+        map_pub_[id]->publish(map);
       } else if (type == 4) {
         sensor_msgs::msg::Image image =
           DeserializeMsg<sensor_msgs::msg::Image>(buffer);

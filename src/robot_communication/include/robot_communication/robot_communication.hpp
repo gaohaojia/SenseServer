@@ -79,7 +79,7 @@ class RobotCommunicationNode : public rclcpp::Node {
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
     realsense_pointcloud_pub_[MAX_ROBOT_COUNT];
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr
-    costmap_pub_[MAX_ROBOT_COUNT];
+    map_pub_[MAX_ROBOT_COUNT];
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr
     image_pub_[MAX_ROBOT_COUNT];
 
