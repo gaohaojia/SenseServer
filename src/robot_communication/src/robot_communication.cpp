@@ -66,9 +66,9 @@ RobotCommunicationNode::RobotCommunicationNode(
       this->create_publisher<sensor_msgs::msg::Image>(
         "/robot_" + std::to_string(i) + "/image_raw", 5);
     way_point_sub_[i] =
-      this->create_subscription<geometry_msgs::msg::PointStamped>(
+      this->create_subscription<geometry_msgs::msg::PoseStamped>(
         "/robot_" + std::to_string(i) + "/way_point", 2,
-        [this, i](const geometry_msgs::msg::PointStamped::SharedPtr msg) {
+        [this, i](const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
           WayPointCallBack(msg, i);
         });
   }
@@ -123,10 +123,10 @@ void RobotCommunicationNode::InitServer() {
 }
 
 void RobotCommunicationNode::WayPointCallBack(
-  const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg,
+  const geometry_msgs::msg::PoseStamped::ConstSharedPtr way_point_msg,
   const int robot_id) {
   std::vector<uint8_t> data_buffer =
-    SerializeMsg<geometry_msgs::msg::PointStamped>(*way_point_msg);
+    SerializeMsg<geometry_msgs::msg::PoseStamped>(*way_point_msg);
   SendBuffer prepare_buffer = {robot_id, data_buffer, 0};
   PrepareBuffer(prepare_buffer);
 }

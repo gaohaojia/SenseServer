@@ -66,7 +66,7 @@ class RobotCommunicationNode : public rclcpp::Node {
   void ParseBufferThread(const int robot_id);
 
   void WayPointCallBack(
-    const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg,
+    const geometry_msgs::msg::PoseStamped::ConstSharedPtr way_point_msg,
     const int robot_id);
 
   template <class T>
@@ -83,7 +83,7 @@ class RobotCommunicationNode : public rclcpp::Node {
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr
     image_pub_[MAX_ROBOT_COUNT];
 
-  rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr
     way_point_sub_[MAX_ROBOT_COUNT];
 };
 }  // namespace robot_communication

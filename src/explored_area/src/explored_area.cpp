@@ -3,6 +3,7 @@
 #include <functional>
 #include <memory>
 #include <pcl/impl/point_types.hpp>
+#include <rclcpp/logging.hpp>
 #include <rclcpp/qos.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <string>
