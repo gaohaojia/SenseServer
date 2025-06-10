@@ -9,6 +9,7 @@
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <tf2/LinearMath/Transform.h>
+#include <geometry_msgs/msg/point_stamped.hpp>
 
 #include <memory>
 #include <pcl/impl/point_types.hpp>
@@ -17,7 +18,6 @@
 #include <rclcpp/node_options.hpp>
 #include <rclcpp/qos_event.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/detail/image__struct.hpp>
 #include <thread>
 
 #include "geometry_msgs/msg/transform_stamped.hpp"
@@ -66,7 +66,7 @@ class RobotCommunicationNode : public rclcpp::Node {
   void ParseBufferThread(const int robot_id);
 
   void WayPointCallBack(
-    const geometry_msgs::msg::PoseStamped::ConstSharedPtr way_point_msg,
+    const geometry_msgs::msg::PointStamped::ConstSharedPtr way_point_msg,
     const int robot_id);
 
   template <class T>
@@ -83,7 +83,7 @@ class RobotCommunicationNode : public rclcpp::Node {
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr
     image_pub_[MAX_ROBOT_COUNT];
 
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr
+  rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr
     way_point_sub_[MAX_ROBOT_COUNT];
 };
 }  // namespace robot_communication
