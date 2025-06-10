@@ -12,12 +12,13 @@ def generate_launch_description():
     robot_count = LaunchConfiguration('robot_count')
     declare_robot_count = DeclareLaunchArgument('robot_count', default_value='3', description='')
 
-    rviz_config_file = os.path.join(get_package_share_directory('visualization_bringup'), 'rviz', 'visualization.rviz')
-
     start_foxglove_bridge = IncludeLaunchDescription(
         XMLLaunchDescriptionSource(os.path.join(
-            get_package_share_directory('foxglove_bridge'), 'launch', 'foxglove_bridge_launch.xml')
-        )
+            get_package_share_directory('foxglove_bridge'), 'launch', 'foxglove_bridge_launch.xml'),
+        ),
+        launch_arguments={
+            'send_buffer_limit': '1000000000',
+        }.items()
     )
 
     start_explored_area = IncludeLaunchDescription(
@@ -29,16 +30,15 @@ def generate_launch_description():
         }.items()
     )
 
-    start_rviz = Node(
-        package='rviz2',
-        executable='rviz2',
-        arguments=['-d', rviz_config_file],
-        output='screen'
-    )
-
     start_robot_communication = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(
             get_package_share_directory('robot_communication'), 'launch', 'robot_communication.launch.py')
+        ),
+    )
+
+    start_map_merge = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(
+            get_package_share_directory('multirobot_map_merge'), 'launch', 'map_merge.launch.py')
         ),
     )
 
@@ -50,7 +50,7 @@ def generate_launch_description():
     ld.add_action(TimerAction(period=5.0, actions=[start_explored_area]))
 
     ld.add_action(start_foxglove_bridge)
-    ld.add_action(start_rviz)
     ld.add_action(start_robot_communication)
+    ld.add_action(start_map_merge)
 
     return ld
